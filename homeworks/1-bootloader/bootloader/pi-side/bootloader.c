@@ -53,7 +53,11 @@ void notmain(void) {
 
 
 	/* XXX put your bootloader implementation here XXX */
-
+	while (1) {
+		unsigned n = get_uint();
+		if (n == 0x12345678) reboot(); // Should reboot on signal and cue
+    put_uint(n + 1);
+	}
 
 	// XXX: appears we need these delays or the unix side gets confused.
 	// I believe it's b/c the code we call re-initializes the uart; could
@@ -61,7 +65,7 @@ void notmain(void) {
 	delay_ms(500);
 
 	// run what client sent.
-        BRANCHTO(ARMBASE);
+  BRANCHTO(ARMBASE);
 	// should not get back here, but just in case.
 	reboot();
 }
