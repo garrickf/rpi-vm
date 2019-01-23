@@ -30,8 +30,11 @@ unsigned char *read_file(int *size, const char *name) {
   if (ferror(fptr) != 0) {
     panic("read_file: error reading file");
   } else {
-    buffer[bytesRead++] = '\0'; // Pad end with null-teminating chars
+    buffer[bytesRead + 1] = '\0'; // Pad end with null-teminating chars
   }
+
+  // Write nBytes read to size
+  *size = bytesRead;
   
   printf("%s\n", buffer); 
 	return buffer;

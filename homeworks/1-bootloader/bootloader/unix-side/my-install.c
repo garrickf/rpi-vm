@@ -2,7 +2,7 @@
 // Simple bootloader for an r/pi connected via a tty-USB device.
 //
 // Sketch: 
-//  	1. read in program to send.
+//  1. read in program to send.
 //	2. find the USB-tty serial device
 //	3. open the USB-tty serial device in 8n1 mode.
 //	4. send the program using a custom protocol.
@@ -42,15 +42,15 @@ int set_tty_to_8n1(int fd, unsigned speed, double timeout) {
 	// https://github.com/rlcheng/raspberry_pi_workshop
 	cfsetspeed(&tty, speed);
 
-        // disable IGNBRK for mismatched speed tests; otherwise receive break
-        // as \000 chars
+  // disable IGNBRK for mismatched speed tests; otherwise receive break
+  // as \000 chars
 
 	// XXX: wait, does this disable break or ignore-ignore break??
-        tty.c_iflag &= ~IGNBRK;         // disable break processing
-        tty.c_lflag = 0;                // no signaling chars, no echo,
+  tty.c_iflag &= ~IGNBRK;         // disable break processing
+  tty.c_lflag = 0;                // no signaling chars, no echo,
                                         // no canonical processing
-        tty.c_oflag = 0;                // no remapping, no delays
-        tty.c_cc[VMIN]  = 0;            // read doesn't block
+  tty.c_oflag = 0;                // no remapping, no delays
+  tty.c_cc[VMIN]  = 0;            // read doesn't block
 	assert(timeout < 100 && timeout > 0);
 	// 0.1 seconds read timeout
         tty.c_cc[VTIME] = (int)timeout *10;            
