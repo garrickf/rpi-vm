@@ -53,7 +53,12 @@ void notmain(void) {
 
 
 	/* XXX put your bootloader implementation here XXX */
-	while (1) {
+	
+  // Wait for SOH byte
+  unsigned soh = get_uint();
+  put_uint(soh);
+
+  while (1) {
 		unsigned n = get_uint();
 		if (n == 0x12345678) reboot(); // Should reboot on signal and cue
     put_uint(n + 1);

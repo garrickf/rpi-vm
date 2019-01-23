@@ -58,7 +58,11 @@ void expect(const char *msg, int fd, unsigned v) {
 // unix-side bootloader: send the bytes, using the protocol.
 // read/write using put_uint() get_unint().
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
-	for (unsigned i = 1; i < 10; i++) {
+	// HW1: send SOH (start-of-header)
+  put_uint(fd, SOH);
+  expect("receive SOH byte", fd, SOH);
+
+  for (unsigned i = 1; i < 10; i++) {
 		put_uint(fd, i);
 		fprintf(stderr, "sending %d...\n", i);
 		expect("ping-pong", fd, i+1);
