@@ -4,10 +4,10 @@
 
 int main() {
 	// exmaple of how to call function once.
-	xc_run_fn_vv_once("notmain", notmain);
+  //	xc_run_fn_vv_once("notmain", notmain);
 
 	// example of how to call gpio(pin) function
-	xc_run_fn_iu("gpio_broken_example", gpio_broken_example, xc_get_pin_gen());
+	xc_run_fn_iu("gpio_set_output", gpio_set_output, xc_get_pin_gen());
 
 
 }

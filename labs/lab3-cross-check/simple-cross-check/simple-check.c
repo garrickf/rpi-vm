@@ -32,12 +32,49 @@ static void print_read(mem_t *m) {
  * implement these two functions.
  */
 
+int kNumMemEntries = 1000;
+int size = 0;
+mem_t memarr[1000];
+
+mem_t *getMemEntry(void *addr) {
+  for (int i = 0; i < kNumMemEntries; i++) {
+    mem_t temp = memarr[i];
+    if (temp.addr == addr) return &memarr[i];
+  }
+  return NULL;
+}
+
+mem_t *createMemEntry() {
+  size++;
+  return &memarr[size-1];
+}
+
 unsigned (get32)(volatile void *addr) {
-	assert(0);
+  mem_t *hit = getMemEntry((void *)addr);
+  if (hit == NULL) {
+    mem_t *new = createMemEntry();
+    new->addr = (void *)addr;
+    new->val = random();
+    print_read(new);
+    return new->val;
+  } else {
+    print_read(hit);
+    return hit->val;
+  }
 }
 
 void (put32)(volatile void *addr, unsigned val) {
-	assert(0);
+  mem_t *hit = getMemEntry((void *)addr);
+  if (hit == NULL) {
+    mem_t *new = createMemEntry();
+    new->addr = (void *)addr;
+    new->val = val;
+    print_write(new);
+  } else {
+    hit->val = val; // Update value
+    print_write(hit);
+  }
+ 
 }
 
 /***********************************************************************
@@ -60,15 +97,18 @@ void xc_run_fn_vv_once(const char *A, void (*a)(void)) {
 	printf("returned\n");
 }
 
+static int pin_gen(unsigned *out) {
+        static unsigned u = 0;
+        if(u > 70) {
+                u = 0;
+                return 0;
+        }
+        *out = (u < 64) ? u : random();
+        u++;
+        return 1;
+}
+
 gen_t xc_get_pin_gen(void) {
-	return xc_lambda_gen
-        ({
-                static unsigned u = 0;
-                if(u > 70)
-                        return 0;
-                *out = (u < 64) ? u : random();
-                u++;
-                return 1;
-        });
+        return pin_gen;
 }
 
