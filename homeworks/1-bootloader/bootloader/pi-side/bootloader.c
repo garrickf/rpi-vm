@@ -58,7 +58,11 @@ void notmain(void) {
   unsigned soh = get_uint();
   unsigned nBytes = get_uint();
   unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
+  unsigned fileHash = get_uint();
+
+  put_uint(soh);
   put_uint(nBytesHash);
+  put_uint(fileHash);
 
   while (1) {
 		unsigned n = get_uint();
