@@ -12,31 +12,29 @@
 
 // read entire file into buffer.  return it, write total bytes to <size>
 unsigned char *read_file(int *size, const char *name) {
-	printf("%s\n", name);
-  FILE *fptr = fopen(name, "r"); // g: open file for reading
+	printf("read_file: want to open %s\n", name); // DEBUG
+  int fd = open(name, O_RDONLY); // g: open file for reading
+
+  // To get the file size, we use the stat() function
+  struct stat st;
+  if (stat(name, &st) == -1) panic("read_file: stat() failed");
+  size_t nBytes = st.st_size;
+  size_t bufsize = nBytes + 1; // Extra padding TODO: do I need this?
+  // printf("buffer size, stat: %zu\n", bufsz); // DEBUG: Print buffer size
  
-  // We don't know the file size ahead of time, so we can seek to the end
-  // of the file and get the filepos using ftell
-  if (fseek(fptr, 0L, SEEK_END) != 0) panic("read_file: could not seek to EOF");
-  size_t bufsize = ftell(fptr) + 1; // Include extra byte for padding
-
-  printf("%zu bytes, padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0));
+  printf("read_file: %zu bytes adj., padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0)); // DEBUG
   bufsize += bufsize % 4 != 0 ? 4 - bufsize % 4 : 0;
-  unsigned char *buffer = malloc(sizeof(char) * bufsize);
+  unsigned char *buffer = malloc(sizeof(unsigned char) * bufsize);
   
-  if (fseek(fptr, 0L, SEEK_SET) != 0) panic("read_file: could not seek to beginning");
-
-  size_t bytesRead = fread(buffer, sizeof(char), bufsize, fptr);
-  if (ferror(fptr) != 0) {
-    panic("read_file: error reading file");
-  } else {
-    buffer[bytesRead + 1] = '\0'; // Pad end with null-teminating chars
-  }
+  // Use an unbuffered system call read, not fread, for the binary
+  // Read exactly nBytes (the proper size of the file)
+  if (read(fd, buffer, nBytes) == -1) panic("read_file: read() failed");
+  buffer[nBytes] = '\0'; // Pad end with null-teminating char // TODO: do i need this? a better way?
 
   // Write nBytes read to size
-  *size = bytesRead;
+  *size = nBytes;
   
-  printf("%s\n", buffer); 
+  printf("read_file: first bit of buffer: %s\n", buffer); // DEBUG 
 	return buffer;
 }
 
@@ -94,8 +92,11 @@ int open_tty(const char **portname) {
 	strcat(path, dirname);
 	// fprintf(stderr, "<%s>\n", path); // DEBUG
 	int fd = open(path, O_RDWR|O_NOCTTY|O_SYNC);
-	fprintf(stdout, "<%s>%d\n", "opened at fd:", fd); // DEBUG
+	fprintf(stdout, "open_tty: opening connection to rpi at fd %d\n", fd); // DEBUG
 
-	// Return a file descriptor to the pi
+  // sprintf(*portname, "%s", dirname); // Copy path to **portname
+  // strcpy(*portname, dirname);	
+
+  // Return a file descriptor to the pi
 	return fd;
 }

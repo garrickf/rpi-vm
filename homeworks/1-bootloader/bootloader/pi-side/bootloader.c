@@ -56,7 +56,9 @@ void notmain(void) {
 	
   // Wait for SOH byte
   unsigned soh = get_uint();
-  put_uint(soh);
+  unsigned nBytes = get_uint();
+  unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
+  put_uint(nBytesHash);
 
   while (1) {
 		unsigned n = get_uint();

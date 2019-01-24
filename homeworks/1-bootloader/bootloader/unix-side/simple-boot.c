@@ -60,7 +60,11 @@ void expect(const char *msg, int fd, unsigned v) {
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
 	// HW1: send SOH (start-of-header)
   put_uint(fd, SOH);
-  expect("receive SOH byte", fd, SOH);
+  // expect("receive SOH byte", fd, SOH);
+  printf("sending size: %u", n);
+  put_uint(fd, n); // Send nBytes
+  unsigned nBytesHash = crc32(&n, sizeof(unsigned));
+  expect("recieve numBytes hash", fd, nBytesHash); // TODO: send chksum (check buffer, nBytes size. is nBytes + 1 for null term char? include padding?)
 
   for (unsigned i = 1; i < 10; i++) {
 		put_uint(fd, i);
