@@ -13,23 +13,22 @@
 // read entire file into buffer.  return it, write total bytes to <size>
 unsigned char *read_file(int *size, const char *name) {
 	printf("read_file: want to open %s\n", name); // DEBUG
-  int fd = open(name, O_RDONLY); // g: open file for reading
+  int fd = open(name, O_RDONLY); // Open file for reading
 
   // To get the file size, we use the stat() function
   struct stat st;
   if (stat(name, &st) == -1) panic("read_file: stat() failed");
   size_t nBytes = st.st_size;
-  size_t bufsize = nBytes + 1; // Extra padding TODO: do I need this?
+  size_t bufsize = nBytes; // Note: no extra padding
   // printf("buffer size, stat: %zu\n", bufsz); // DEBUG: Print buffer size
  
   printf("read_file: %zu bytes adj., padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0)); // DEBUG
   bufsize += bufsize % 4 != 0 ? 4 - bufsize % 4 : 0;
-  unsigned char *buffer = malloc(sizeof(unsigned char) * bufsize);
+  unsigned char *buffer = calloc(sizeof(unsigned char) * bufsize, sizeof(unsigned char));
   
   // Use an unbuffered system call read, not fread, for the binary
   // Read exactly nBytes (the proper size of the file)
   if (read(fd, buffer, nBytes) == -1) panic("read_file: read() failed");
-  buffer[nBytes] = '\0'; // Pad end with null-teminating char // TODO: do i need this? a better way?
 
   // Write nBytes read to size
   *size = nBytes;
@@ -55,8 +54,6 @@ int filter_for_prefix(const struct dirent *d) {
     const char *prefix = *(ttyusb_prefixes + offset);
     if (prefix == NULL) break;
 
-    // printf("%s", d->d_name);
-    // printf("\n");
     if (strncmp(d->d_name, prefix, strlen(prefix)) == 0) {
       printf("%s\n", d->d_name);	
       return 1;
@@ -80,22 +77,17 @@ int open_tty(const char **portname) {
   if (nEntries != 1) panic(
     "Number of directory entries not 1. Perhaps rpi not found, or more than one is connected?"
   );
-  // TODO: print the path to **portname (a pointer to a string)
-	// printf("%s", (*namelist)->d_name);
-  // sprintf
-	// strdup
 
 	// Open a connection to the rpi
 	char *dirname = (*namelist)->d_name;
-	char path[5 + strlen(dirname)];
+	char path[strlen("/dev/") + strlen(dirname)];
 	strcpy(path, "/dev/");
 	strcat(path, dirname);
-	// fprintf(stderr, "<%s>\n", path); // DEBUG
+
 	int fd = open(path, O_RDWR|O_NOCTTY|O_SYNC);
 	fprintf(stdout, "open_tty: opening connection to rpi at fd %d\n", fd); // DEBUG
 
-  // sprintf(*portname, "%s", dirname); // Copy path to **portname
-  // strcpy(*portname, dirname);	
+  *portname = strdup(path);	
 
   // Return a file descriptor to the pi
 	return fd;
