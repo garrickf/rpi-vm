@@ -32,6 +32,13 @@ static void print_read(mem_t *m) {
  * implement these two functions.
  */
 
+/*
+ * simple-check.c: Simple Check implementation
+ * ---
+ * Naive, brute-force attempt: create "cache" of memory entries, and
+ * for each read/write, check the entries, creating and updating 
+ * them as needed.
+ */
 int kNumMemEntries = 1000;
 int size = 0;
 mem_t memarr[1000];
@@ -73,8 +80,7 @@ void (put32)(volatile void *addr, unsigned val) {
   } else {
     hit->val = val; // Update value
     print_write(hit);
-  }
- 
+  } 
 }
 
 /***********************************************************************
