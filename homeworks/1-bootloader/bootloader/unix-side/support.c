@@ -24,7 +24,7 @@ unsigned char *read_file(int *size, const char *name) {
  
   printf("read_file: %zu bytes adj., padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0)); // DEBUG
   bufsize += bufsize % 4 != 0 ? 4 - bufsize % 4 : 0;
-  unsigned char *buffer = calloc(sizeof(unsigned char) * bufsize, sizeof(unsigned char));
+  unsigned char *buffer = calloc(bufsize, sizeof(unsigned char));
   
   // Use an unbuffered system call read, not fread, for the binary
   // Read exactly nBytes (the proper size of the file)
@@ -33,7 +33,7 @@ unsigned char *read_file(int *size, const char *name) {
   // Write nBytes read to size
   *size = nBytes;
   
-  printf("read_file: first bit of buffer: %s\n", buffer); // DEBUG 
+  printf("read_file: first bit of buffer: %u\n", *(unsigned *)buffer); // DEBUG 
 	return buffer;
 }
 

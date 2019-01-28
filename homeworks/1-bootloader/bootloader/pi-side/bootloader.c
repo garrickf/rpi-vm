@@ -1,40 +1,79 @@
 /* 
- * very simple bootloader.  more robust than xmodem.   (that code seems to 
- * have bugs in terms of recovery with inopportune timeouts.)
+ * bootloader.c - Simple Bootloader
+ * Garrick Fernandez (garrick)
+ * ---
+ * "A very simple bootloader; more robust than xmodem (that code seems to 
+ * have bugs in terms of recovery with inopportune timeouts)." - Dawson
+ * 
+ * Leverages basic utility functions to maintain a communication ping-pong
+ * protocol beween us and the UNIX side until all data has been transferred,
+ * at which point we jump to the executable and run it.
  */
 
 #define __SIMPLE_IMPL__
-#include "../shared-code/simple-boot.h"
+#include "../shared-code/simple-boot.h" // For error codes
+#include "libpi.small/rpi.h"            // For PUT32, uart_ functions
 
-#include "libpi.small/rpi.h"
-
+/*
+ * send_byte
+ * ---
+ * Provided function that ingests the rpi.h interface to send 
+ * a single byte to the UNIX side.
+ */
 static void send_byte(unsigned char uc) {
-	uart_putc(uc);
-}
-static unsigned char get_byte(void) { 
-        return uart_getc();
+  uart_putc(uc);
 }
 
+/*
+ * get_byte
+ * ---
+ * Provided function that ingests the rpi.h interface to send
+ * a single byte to the UNIX side.
+ */
+static unsigned char get_byte(void) { 
+  return uart_getc();
+}
+
+/*
+ * get_uint
+ * ---
+ * Provided function that gets an unsigned (4 byte) chunk of 
+ * data. Uses '|=' to avoid compiler optimizations that shuffle
+ * instructions when we want to construct a correct 4-byte chunk.
+ */
 static unsigned get_uint(void) {
 	unsigned u = get_byte();
-        u |= get_byte() << 8;
-        u |= get_byte() << 16;
-        u |= get_byte() << 24;
-	return u;
+  u |= get_byte() << 8;
+  u |= get_byte() << 16;
+  u |= get_byte() << 24;
+  return u;
 }
+
+/*
+ * put_uint
+ * ---
+ * As above, provided function that puts a 4-byte chunk of data
+ * in transit to the UNIX side.
+ */
 static void put_uint(unsigned u) {
-        send_byte((u >> 0)  & 0xff);
-        send_byte((u >> 8)  & 0xff);
-        send_byte((u >> 16) & 0xff);
-        send_byte((u >> 24) & 0xff);
+  send_byte((u >> 0)  & 0xff);
+  send_byte((u >> 8)  & 0xff);
+  send_byte((u >> 16) & 0xff);
+  send_byte((u >> 24) & 0xff);
 }
 
+/*
+ * die
+ * ---
+ * Provided helper, sends an error code (see shared-code/simple-boot.h)
+ * and reboots the rpi.
+ */
 static void die(int code) {
-        put_uint(code);
-        reboot();
+  put_uint(code);
+  reboot();
 }
 
-//  bootloader:
+//  Steps:
 //	1. wait for SOH, size, cksum from unix side.
 //	2. echo SOH, checksum(size), cksum back.
 // 	3. wait for ACK.
@@ -43,7 +82,12 @@ static void die(int code) {
 //	6. send ACK back.
 //	7. wait 500ms 
 //	8. jump to ARMBASE.
-//
+
+/*
+ * notmain: Bootloader
+ * ---
+ * The main bootloader routine. TODO document, fix and send proper error codes
+ */
 void notmain(void) {
 	uart_init();
 
@@ -51,30 +95,37 @@ void notmain(void) {
 	// you drain the uart.
 	delay_ms(500);
 
-
-	/* XXX put your bootloader implementation here XXX */
-	
+	/* My implementation begins here: */
   // Wait for SOH byte
-  unsigned soh = get_uint();
+  if (get_uint() != SOH) die(BAD_START);
+
   unsigned nBytes = get_uint();
   unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
   unsigned fileHash = get_uint();
 
-  put_uint(soh);
+  put_uint(SOH);
   put_uint(nBytesHash);
   put_uint(fileHash);
 
-  while (1) {
-		unsigned n = get_uint();
-		if (n == 0x12345678) reboot(); // Should reboot on signal and cue
-    put_uint(n + 1);
-	}
+  if (get_uint() != ACK) die(NAK);
+
+  // Begin receipt of binary data
+  unsigned offset;
+  for (offset = 0; offset < nBytes; offset += sizeof(unsigned)) {
+    unsigned chunk = get_uint();
+    PUT32(ARMBASE + offset, chunk); // Copy starting at ARMBASE
+  }
+  // Assert end of transmission, otherwise bad end
+  if (get_uint() != EOT) die(BAD_END); 
+
+  if (crc32((unsigned char *)ARMBASE, nBytes) == fileHash) put_uint(ACK);
+  else die(BAD_CKSUM); // Bad checksum
+  /* End of my implementation. */
 
 	// XXX: appears we need these delays or the unix side gets confused.
 	// I believe it's b/c the code we call re-initializes the uart; could
 	// disable that to make it a bit more clean.
 	delay_ms(500);
-
 	// run what client sent.
   BRANCHTO(ARMBASE);
 	// should not get back here, but just in case.

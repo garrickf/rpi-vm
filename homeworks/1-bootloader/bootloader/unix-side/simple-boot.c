@@ -51,36 +51,53 @@ void put_uint(int fd, unsigned u) {
 // file descriptor matches <v>.
 void expect(const char *msg, int fd, unsigned v) {
 	unsigned x = get_uint(fd);
-	if(x != v) 
-		panic("%s: expected %x, got %x\n", msg, v,x);
+	if (x != v) {
+    char *error = "not an error code - invalid data echoed?";
+    switch (x) {
+      case BAD_CKSUM:
+        error = "bad checksum";
+        break;
+      case BAD_START:
+        error = "bad start of transmission";
+        break;
+      case BAD_END:
+        error = "bad end of transmission";
+        break;
+      case TOO_BIG:
+        error = "payload too big";
+        break;
+      case NAK:
+        error = "no acknowledgement/error in transmission";
+        break;
+    }
+		panic("%s: expected %x, got %x (%s)\n", msg, v, x, error);
+  }
 }
 
 // unix-side bootloader: send the bytes, using the protocol.
 // read/write using put_uint() get_unint().
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
-	// HW1: send SOH (start-of-header)
   put_uint(fd, SOH);
-  // expect("receive SOH byte", fd, SOH);
-  printf("simple_boot: sending size %u\n", n);
-  put_uint(fd, n); // Send nBytes
-  unsigned nBytesHash = crc32(&n, sizeof(unsigned));
-  // expect("recieve numBytes hash", fd, nBytesHash); // TODO: send chksum (check buffer, nBytes size. is nBytes + 1 for null term char? include padding?)
+  put_uint(fd, n); // nBytes
   unsigned fileHash = crc32(buf, n);
   put_uint(fd, fileHash); // Send filehash
 
   // Wait for reply
   expect("receive echoed SOH", fd, SOH);
+  unsigned nBytesHash = crc32(&n, sizeof(unsigned));
   expect("receive crc32 checksum of nBytes", fd, nBytesHash);
   expect("receive echoed file checksum", fd, fileHash);
+  put_uint(fd, ACK); // Send ACK (acknowledgement)
 
-  // TODO: send buffer over 4 bytes at a time
+  // Send buffer over, 4 bytes at a time
+  for (unsigned offset = 0; offset < n; offset += sizeof(unsigned)) {
+    unsigned *chunk = (unsigned *)(buf + offset);
+    put_uint(fd, *chunk);
+    // printf("simple_boot: sending %u\n", *chunk); // DEBUG
+  }
+  put_uint(fd, EOT); // End-of-transmission
 
-  for (unsigned i = 1; i < 10; i++) {
-		put_uint(fd, i);
-		fprintf(stderr, "sending %d...\n", i);
-		expect("ping-pong", fd, i+1);
-	}
-  // Send a reboot signal
-  put_uint(fd, 0x12345678);
+  expect("receive acknowlegement of transmission", fd, ACK);
+  printf("simple_boot: success! exiting.\n");
 	exit(0);
 }
