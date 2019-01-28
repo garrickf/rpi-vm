@@ -161,8 +161,7 @@ int main(int argc, char *argv[]) {
 	// open tty
 	int fd = open_tty(&portname);
   // GF: insert bit of code: print out the port name
-  //  portname = "help";
-  printf("portname after modification: %s", portname);
+  // printf("portname after modification: %s\n", portname); // DEBUG
  	// set it to be 8n1  and 115200 baud
         fd = set_tty_to_8n1(fd, B115200, 2);
 

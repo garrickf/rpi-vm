@@ -1,3 +1,10 @@
+/*
+ * simple-boot.c
+ * Garrick Fernandez (garrick)
+ * ---
+ * Exports the simple bootloader routine, which we need!
+ */
+
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
@@ -16,6 +23,7 @@ static void send_byte(int fd, unsigned char b) {
 	if(write(fd, &b, 1) < 0)
 		panic("write failed in send_byte\n");
 }
+
 static unsigned char get_byte(int fd) {
 	unsigned char b;
 	int n;
@@ -25,30 +33,35 @@ static unsigned char get_byte(int fd) {
 }
 
 // NOTE: the other way to do is to assign these to a char array b and 
-//	return *(unsigned)b
+//    return *(unsigned)b
 // however, the compiler doesn't have to align b to what unsigned 
 // requires, so this can go awry.  easier to just do the simple way.
 // we do with |= to force get_byte to get called in the right order 
-// 	(get_byte(fd) | get_byte(fd) << 8 ...) 
+// 	  (get_byte(fd) | get_byte(fd) << 8 ...) 
 // isn't guaranteed to be called in that order b/c | is not a seq point.
 static unsigned get_uint(int fd) {
-        unsigned u = get_byte(fd);
-        u |= get_byte(fd) << 8;
-        u |= get_byte(fd) << 16;
-        u |= get_byte(fd) << 24;
-        return u;
+  unsigned u = get_byte(fd);
+  u |= get_byte(fd) << 8;
+  u |= get_byte(fd) << 16;
+  u |= get_byte(fd) << 24;
+  return u;
 }
 
 void put_uint(int fd, unsigned u) {
-	// mask not necessary.
-        send_byte(fd, (u >> 0)  & 0xff);
-        send_byte(fd, (u >> 8)  & 0xff);
-        send_byte(fd, (u >> 16) & 0xff);
-        send_byte(fd, (u >> 24) & 0xff);
+  // mask not necessary.
+  send_byte(fd, (u >> 0)  & 0xff);
+  send_byte(fd, (u >> 8)  & 0xff);
+  send_byte(fd, (u >> 16) & 0xff);
+  send_byte(fd, (u >> 24) & 0xff);
 }
 
-// simple utility function to check that a u32 read from the 
-// file descriptor matches <v>.
+/* 
+ * expect
+ * ---
+ * Simple utility function to check that a u32 read from the 
+ * file descriptor matches v. Interprets error codes if they're
+ * there.
+ */
 void expect(const char *msg, int fd, unsigned v) {
 	unsigned x = get_uint(fd);
 	if (x != v) {
@@ -74,8 +87,16 @@ void expect(const char *msg, int fd, unsigned v) {
   }
 }
 
-// unix-side bootloader: send the bytes, using the protocol.
-// read/write using put_uint() get_unint().
+/*
+ * simple_boot: UNIX-side Bootloader
+ * ---
+ * Send bytes using protocol (see handout and pi-side/bootloader.c). 
+ *   1) Send SOH, nBytes, cksum of file
+ *   2) Wait for echoed data, send ACK
+ *   3) Send data (in buf), then EOT
+ *   4) Wait for ACK from rpi, end
+ * Reads and writes are done using put_uint() and get_uint().
+ */
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
   put_uint(fd, SOH);
   put_uint(fd, n); // nBytes
@@ -98,6 +119,5 @@ void simple_boot(int fd, const unsigned char * buf, unsigned n) {
   put_uint(fd, EOT); // End-of-transmission
 
   expect("receive acknowlegement of transmission", fd, ACK);
-  printf("simple_boot: success! exiting.\n");
 	exit(0);
 }

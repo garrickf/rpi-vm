@@ -1,3 +1,10 @@
+/*
+ * support.c: Support functions for simple-boot.c
+ * ---
+ * Exports two helper functions, one for reading in a file to a buffer and 
+ * another for opening a connection to the rpi.
+ */
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -10,9 +17,15 @@
 #include "../shared-code/simple-boot.h"
 #include "support.h"
 
-// read entire file into buffer.  return it, write total bytes to <size>
+/*
+ * read_file
+ * ---
+ * Opens the file specified by name and reads it into a buffer. Returns
+ * the buffer and writes the number of bytes read to an integer pointed
+ * to by size.
+ */
 unsigned char *read_file(int *size, const char *name) {
-	printf("read_file: want to open %s\n", name); // DEBUG
+	// printf("read_file: want to open %s\n", name); // DEBUG
   int fd = open(name, O_RDONLY); // Open file for reading
 
   // To get the file size, we use the stat() function
@@ -20,9 +33,8 @@ unsigned char *read_file(int *size, const char *name) {
   if (stat(name, &st) == -1) panic("read_file: stat() failed");
   size_t nBytes = st.st_size;
   size_t bufsize = nBytes; // Note: no extra padding
-  // printf("buffer size, stat: %zu\n", bufsz); // DEBUG: Print buffer size
  
-  printf("read_file: %zu bytes adj., padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0)); // DEBUG
+  // printf("read_file: %zu bytes adj., padding to %zu\n", bufsize, bufsize + (bufsize % 4 != 0 ? 4 - bufsize % 4 : 0)); // DEBUG
   bufsize += bufsize % 4 != 0 ? 4 - bufsize % 4 : 0;
   unsigned char *buffer = calloc(bufsize, sizeof(unsigned char));
   
@@ -32,50 +44,52 @@ unsigned char *read_file(int *size, const char *name) {
 
   // Write nBytes read to size
   *size = nBytes;
-  
-  printf("read_file: first bit of buffer: %u\n", *(unsigned *)buffer); // DEBUG 
+  // printf("read_file: first bit of buffer: %u\n", *(unsigned *)buffer); // DEBUG 
 	return buffer;
 }
 
 #define _SVID_SOURCE
 #include <dirent.h>
 const char *ttyusb_prefixes[] = {
-	"ttyUSB",	// linux
-	// "tty.SLAB_USB", // mac os
-	"cu.SLAB", 	// mac os fix?
+	"ttyUSB",	// Linux
+	// "tty.SLAB_USB", 
+	"cu.SLAB", 	// MacOS fix, look for this port!
 	0
 };
 
-// G: use strncmp for comparing in filter functions
-// Cycle through array of prefixes, printing each one out
+/*
+ * filter_for_prefix
+ * ---
+ * Checks the passed-in dirent's name against the specified
+ * ttyusb_prefixes. If any matches found, returns 1, oth. 0.
+ */
 int filter_for_prefix(const struct dirent *d) {
   int offset = 0;
   while (1) {
     const char *prefix = *(ttyusb_prefixes + offset);
     if (prefix == NULL) break;
 
-    if (strncmp(d->d_name, prefix, strlen(prefix)) == 0) {
-      printf("%s\n", d->d_name);	
-      return 1;
-    }
+    if (strncmp(d->d_name, prefix, strlen(prefix)) == 0) return 1;
     offset++;
   }
   return 0;
 }
 
-// open the TTY-usb device:
-//	- use <scandir> to find a device with a prefix given by ttyusb_prefixes
-//	- returns an open fd to it
-// 	- write the absolute path into <pathname> if it wasn't already
-//	  given.
-//      G: portname is the pathname
+/*
+ * open_tty
+ * ---
+ * Opens a connection to the rpi device (just a file descriptor). Uses
+ * scandir to find a prefix given by ttyusb_prefixes. Returns an open fd to
+ * the rpi, and creates a heap-allocated absolute pathname string put into 
+ * *portname.
+ */
 int open_tty(const char **portname) {
-  // Use scandir to find the location of our rpi
+  // Use scandir to find the location of our rpi (null for compare fn)
 	struct dirent **namelist;
 	int nEntries = scandir("/dev/", &namelist, filter_for_prefix, NULL);
   // Check to make sure we found just the rpi
   if (nEntries != 1) panic(
-    "Number of directory entries not 1. Perhaps rpi not found, or more than one is connected?"
+    "open_tty: # of dir entries not 1; perhaps rpi not found, or more than one is connected?"
   );
 
 	// Open a connection to the rpi
@@ -85,10 +99,7 @@ int open_tty(const char **portname) {
 	strcat(path, dirname);
 
 	int fd = open(path, O_RDWR|O_NOCTTY|O_SYNC);
-	fprintf(stdout, "open_tty: opening connection to rpi at fd %d\n", fd); // DEBUG
-
+	// printf("open_tty: opening connection to rpi at fd %d\n", fd); // DEBUG
   *portname = strdup(path);	
-
-  // Return a file descriptor to the pi
-	return fd;
+	return fd; // Return a file descriptor to the pi
 }
