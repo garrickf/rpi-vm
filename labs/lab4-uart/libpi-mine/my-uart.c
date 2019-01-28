@@ -23,7 +23,7 @@
 // Defines for the start of the AUX and UART registers
 #define AUX_BASE 0x20210000
 #define AUX_ENABLES_OFST 0x5004
-static int aux_enables = (AUX_BASE + AUX_ENABLES_OFST); // TODO: void *, static (so doesnt escape the namespace (nm))
+static volatile unsigned *auxenb = (volatile unsigned *)(AUX_BASE + AUX_ENABLES_OFST); // TODO: void *, static (so doesnt escape the namespace (nm))
 
 /*
  * Auxillary peripherals structure, taken from Dawson's newsgroup post.
@@ -78,15 +78,6 @@ void init_gpio() {
 }
 
 /*
- * aux_enable
- * ---
- * Sets the mini UART enable bit, bit 0 of the AUXENB register (see pg. 9).
- */
-void aux_enable() { // TODO: get the bits first
-  PUT32(aux_enables, 1);
-}
-
-/*
  * clear_txrx
  * ---
  * Disables the receiver and transmitter by zeroing out bits 1-0 on the
@@ -136,7 +127,10 @@ void uart_init(void) {
   dev_barrier(); // Paranoid; in case called multiple times 
   init_gpio();
   dev_barrier(); // Swap to AUX peripheral
-  aux_enable();
+    
+  // Write to the AUXENB register's lowest bit to enable the UART (pg. 9)
+  put32(auxenb, get32(auxenb) | 1);
+  
   dev_barrier();
 
   // Disable TX/RX while we work
