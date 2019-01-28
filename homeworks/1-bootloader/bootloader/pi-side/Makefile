@@ -1,7 +1,8 @@
 CC= arm-none-eabi-gcc
 CFLAGS = -I$(LIBPI)/.. -I. -Wall -Og -nostdlib -nostartfiles -ffreestanding 
 
-LIBPI = libpi.small
+#LIBPI = libpi.small
+LIBPI = libpi-mine
 
 SRC = bootloader.c 
 OBJS = $(SRC:.c=.o)
@@ -13,7 +14,8 @@ start.o : start.s
 
 kernel.img : memmap start.o $(OBJS)
 	make -C libpi.small
-	arm-none-eabi-ld start.o $(OBJS) libpi.small/libpi.a -T memmap -o bootloader.elf
+#	arm-none-eabi-ld start.o $(OBJS) libpi.small/libpi.a -T memmap -o bootloader.elf
+	arm-none-eabi-ld start.o $(OBJS) libpi-mine/libpi.a -T memmap -o bootloader.elf
 	arm-none-eabi-objdump -D bootloader.elf > bootloader.list
 	arm-none-eabi-objcopy bootloader.elf -O binary kernel.img
 
