@@ -1,47 +1,66 @@
+/*
+ * my-uart: Personal implementation of uart.c
+ * Garrick Fernandez (garrick)
+ * ---
+ * Exports three important functions for UART 
+ * (universal asynchronous receiver-transmitter) communication:
+ * init, getc, and putc. The test programs in lab4-uart hook into
+ * the library compiled with this source in order to transmit data
+ * back to the UNIX side. In the bootloader, putc and getc are 
+ * utilized by higher-level helpers to sends chunks of the communcations
+ * protocol needed to boot the program.
+ */
+
 #include "rpi.h"
 #include "uart.h"
 #include "gpio.h"
 #include "mem-barrier.h"
 
+//#define get32 GET32
+//#define put32 PUT32 
 // NOTE: use get32 and put32 from rpi.h
 
 // Defines for the start of the AUX and UART registers
 #define AUX_BASE 0x20210000
 #define AUX_ENABLES_OFST 0x5004
-volatile unsigned *aux_enables = (volatile unsigned *)(AUX_BASE + AUX_ENABLES_OFST); // TODO: void *, static (so doesnt escape the namespace (nm))
+static int aux_enables = (AUX_BASE + AUX_ENABLES_OFST); // TODO: void *, static (so doesnt escape the namespace (nm))
 
-// 2.1, p8
+/*
+ * Auxillary peripherals structure, taken from Dawson's newsgroup post.
+ * If you cast a memory address as a pointer to a struct, you can
+ * navigate its fields in analogous fashion to the registers on the rpi. 
+ * Nifty! See pg. 8-9 for more details.
+ */
 struct aux_periphs {
-        volatile unsigned
-                /* <aux_mu_> regs */
-                io,             // p11
-                ier,
+  volatile unsigned
+  /* <aux_mu_> regs */
+  io, // see pg. 11
+  ier,
+  #define CLEAR_TX_FIFO (1 << 1)
+  #define CLEAR_RX_FIFO (1 << 2)
+  #define CLEAR_FIFOs (CLEAR_TX_FIFO|CLEAR_RX_FIFO)
+  // dwelch does not write the low bit?
+  # define IIR_RESET ((0b11 << 6) | 1)
+  iir,
 
-#               define CLEAR_TX_FIFO    (1 << 1)
-#               define CLEAR_RX_FIFO    (1 << 2)
-#               define CLEAR_FIFOs      (CLEAR_TX_FIFO|CLEAR_RX_FIFO)
-                // dwelch does not write the low bit?
-#               define IIR_RESET        ((0b11 << 6) | 1)
-                iir,
+  lcr,
+  mcr,
+  lsr,
+  msr,
+  scratch,
 
-                lcr,
-                mcr,
-                lsr,
-                msr,
-                scratch,
+  #define RX_ENABLE (1 << 0)
+  #define TX_ENABLE (1 << 1)
+  cntl,
 
-#               define RX_ENABLE (1 << 0)
-#               define TX_ENABLE (1 << 1)
-                cntl,
-
-                stat,
-                baud;
+  stat,
+  baud;
 };
 
-static struct aux_periphs * const uart = (void*)0x20215040;
 // Usage: uart->{{ field name }}
+static struct aux_periphs * const uart = (void*)0x20215040; // See pg. 8 for mem address
 
-// use this if you need memory barriers.
+// Combine the read/write memory barriers to remove ambiguity in the code.
 void dev_barrier(void) {
 	dmb();
 	dsb();
@@ -64,7 +83,7 @@ void init_gpio() {
  * Sets the mini UART enable bit, bit 0 of the AUXENB register (see pg. 9).
  */
 void aux_enable() { // TODO: get the bits first
-  put32(aux_enables, 0b1);
+  PUT32(aux_enables, 1);
 }
 
 /*
@@ -135,28 +154,29 @@ void uart_init(void) {
   dev_barrier();
 }
 
-// Check stat register
-#define TX_EMPTY 5
-#define RX_READY 0
-int rxReady() {
-  unsigned reg = get32(&uart->lsr);
-  return (reg & (0b1 << RX_READY)) != 0;
-}
-
-int txEmpty() {
-  unsigned reg = get32(&uart->lsr);
-  return (reg & (0b1 << TX_EMPTY)) != 0;
-}
-
-// Busy wait for receive FIFO to hold 1 symbol (for us, an 8 bit string).
+// XXX: Check stat register
+#define TX_EMPTY (1 << 5)
+#define RX_READY 1
+/*
+ * uart_getc
+ * ---
+ * Uses the LSR register to check bit 0 (reciever ready) before
+ * taking an 8-bit symbol from the IO register. Se pgs. 15 and 11
+ * for the register info. Uses a busy loop.
+ */
 int uart_getc(void) {
-	while (!rxReady()) {} 
-  unsigned reg = get32(&uart->io);
-  return reg & 0xff; // Get 8 LS bits
+	while (!(get32(&uart->lsr) & RX_READY)) {} // While receiver empty (pg. 15)
+  return get32(&uart->io) & 0xff;
 }
 
+/*
+ * uart_putc
+ * ---
+ * Uses the LSR register to check bit 5 (transmitter empty) before
+ * sending a single 8-bit symbol of data via the IO register. See pgs.
+ * 15 and 11 for the register info.
+ */
 void uart_putc(unsigned c) {
-  while (!txEmpty()) {}
-  unsigned value = c & 0xff; // Take 8 LS bits
-  put32(&uart->io, value); // TODO: take out middle man
+  while (!(get32(&uart->lsr) & TX_EMPTY)) {} // While transmitter full (pg. 15)
+  put32(&uart->io, c & 0xff);
 }

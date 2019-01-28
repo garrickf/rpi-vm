@@ -86,10 +86,10 @@ static void die(int code) {
 /*
  * notmain: Bootloader
  * ---
- * The main bootloader routine. TODO document, fix and send proper error codes
+ * The main bootloader routine.
  */
 void notmain(void) {
-	uart_init();
+	uart_init(); // This hooks into our UART implementation!
 
 	// XXX: cs107e has this delay; doesn't seem to be required if 
 	// you drain the uart.
