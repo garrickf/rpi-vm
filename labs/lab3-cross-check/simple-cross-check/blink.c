@@ -5,7 +5,7 @@
 volatile unsigned *gpio_set0  = (volatile unsigned *)(GPIO_BASE + 0x1C);
 volatile unsigned *gpio_clr0  = (volatile unsigned *)(GPIO_BASE + 0x28);
 
-// TODO: Lab 3: rewrite using get and put32
+// XXX: Lab 3: rewritten using get and put32
 // int functions should pass -1 if bogus is passed in
 int gpio_set_output(unsigned pin) {
   if (pin >= 32) return -1;
