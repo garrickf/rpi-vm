@@ -172,9 +172,13 @@ void replay(endpoint_t *end, int corrupt_op) {
 
 	E_t *e = Q_start(&end->replay_log);
 	for(int n = 0; e; e = Q_next(e), n++) {
-		// note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val);
+		note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 
 		unsigned v = e->val;
+    if (e->cnt == corrupt_op) {
+      v = corrupt32(v);
+      can_fail_p = 1;
+    }
 
 		// polarity of read/write will depend on if the unix
 		// or pi side is sending.   right now we just test 
@@ -200,12 +204,15 @@ void replay(endpoint_t *end, int corrupt_op) {
       unsigned temp;
 			int ret = read_exact(end, &temp, sizeof(unsigned), can_fail_p);
       if (ret != 1) err("read exact messed up");
-      if (temp != v) panic("values don't match; expected: %s:%d:%x, got %x\n", op_to_s(e->op), e->cnt, e->val, temp);
+      if (temp != v) {
+        if(can_fail_p) goto error;
+        panic("values don't match; expected: %s:%d:%x, got %x\n", op_to_s(e->op), e->cnt, e->val, temp);
+      }
 			break;
 		default: panic("invalid op <%d>\n", e->op);
 		}
 
-		// note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
+		note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 	}
 
 	// successfully consumed the log.
@@ -234,6 +241,6 @@ error:
 	if((status = proc_exit_code(end)) == 0)
 		err("process exited successfully, expected an error\n");
 	else
-		note("SUCCESS: after corrupt, process exited with %d\n", status);
+		note("SUCCESS: after corrupt, process exited with %d\n\n", status);
 
 }

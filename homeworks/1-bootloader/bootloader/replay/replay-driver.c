@@ -97,6 +97,8 @@ void check_crashes(Q_t replay_log, char *argv[]) {
 
 // check no failure.
 void check_success(Q_t replay_log, char *argv[]) {
+		if(signal(SIGPIPE, SIG_IGN) < 0)
+                sys_die(signal, cannot catch);
 	endpoint_t end = mk_endpoint_proc("unix.side", replay_log, &argv[1]);
 	replay(&end, -1);
 	destroy_end(&end);
@@ -111,7 +113,7 @@ void check_success(Q_t replay_log, char *argv[]) {
 int main(int argc, char *argv[]) { 
 	demand(argc > 1, no arguments?);
 
-	const int N = 1;
+	const int N = 1000;
 	srandom(0); 	// so everyone has the same.
 	struct Q q = read_input(stdin, 0);
 
@@ -124,8 +126,8 @@ int main(int argc, char *argv[]) {
 	//
 	// NOTE: you can externalize the reads and writes and then 
 	// check against everyone else.
-	for(int i = 0; i < N; i++)
-		check_crashes(q, argv);
+	// for(int i = 0; i < N; i++)
+	// 	check_crashes(q, argv);
 
 #if 0
 	for(struct E *e = Q_start(&end.replay_log); e; e = Q_next(e)) 
