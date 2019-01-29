@@ -1,3 +1,16 @@
+/*
+ * gpio.c: My own gpio.c
+ * Garrick Fernandez (garrick)
+ * 
+ * Original authors: Pat Hanrahan, Philip Levis, & Julie Zelenski
+ * ---
+ * Cited from code given in lab3-cross-check (XXX: can we do that?)
+ * Implementation is very lightweight now, and it only does gpio_set_function,
+ * which we use in my-uart.c to set pins 14 and 15 to TX and RX.
+ *
+ * TODO: flesh out, make your own!
+ */
+
 #include "gpio.h"
 #include "rpi.h"
 
