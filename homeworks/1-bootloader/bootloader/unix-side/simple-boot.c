@@ -15,6 +15,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include "demand.h"
+#include "trace.h" // For tracing, lab 5
 
 #define __SIMPLE_IMPL__
 #include "../shared-code/simple-boot.h"
@@ -44,10 +45,12 @@ static unsigned get_uint(int fd) {
   u |= get_byte(fd) << 8;
   u |= get_byte(fd) << 16;
   u |= get_byte(fd) << 24;
+  trace_read32(u); // Lab 5 DEBUG
   return u;
 }
 
 void put_uint(int fd, unsigned u) {
+  trace_write32(u); // Lab 5 DEBUG
   // mask not necessary.
   send_byte(fd, (u >> 0)  & 0xff);
   send_byte(fd, (u >> 8)  & 0xff);
@@ -119,5 +122,4 @@ void simple_boot(int fd, const unsigned char * buf, unsigned n) {
   put_uint(fd, EOT); // End-of-transmission
 
   expect("receive acknowlegement of transmission", fd, ACK);
-	exit(0);
 }

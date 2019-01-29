@@ -41,15 +41,28 @@ static unsigned corrupt32(unsigned v) {
  *		c. return endpoint.
  */
 endpoint_t mk_endpoint_proc(const char *name, Q_t q, char *argv[]) {
-	int pid;
+	pid_t pid;
 	int sock[2];
 
-	unimplemented();
+  if (socketpair(PF_LOCAL, SOCK_STREAM, 0, sock) < 0) {
+    sys_die(socketpair, "socketpair failed");
+  }
+
+  if ((pid = fork()) < 0) sys_die(fork, "fork failed");
+  if (pid == 0) { // Child
+    if(dup2(sock[1], TRACE_FD_REPLAY) < 0) sys_die(dup2, "dup2 failed");    
+    if(close(sock[1]) < 0) sys_die(close, "close failed");
+    if(close(sock[0]) < 0) sys_die(close, "close failed");
+    execvp(argv[0], argv);
+    sys_die(execvp, "execvp failed");
+  }
+
+  // Parent
+  if(close(sock[1]) < 0) sys_die(close, "close failed");
 
 	// this should sort-of follow your handoff code except you're using
-	// sockets.
-
-        return mk_endpoint(name, q, sock[0], pid);
+	// sockets. 
+  return mk_endpoint(name, q, sock[0], pid);
 }
 
 /*
@@ -57,9 +70,12 @@ endpoint_t mk_endpoint_proc(const char *name, Q_t q, char *argv[]) {
  * 	1. if exited cleanly, return it's error code.
  *	2. otherwise return -1.
  */
+// TODO: implement, select: timeout on a read call
 static int proc_exit_code(endpoint_t *this) {
 	// use your hand-off code (more or less)
-	unimplemented();
+	int status;
+    if (waitpid(this->pid, &status, 0) < 0) sys_die(waitpid, "waitpid failed");
+    return WEXITSTATUS(status);
 }
 
 static void write_exact(endpoint_t *this, void *buf, int nbytes) {
@@ -72,12 +88,25 @@ static void write_exact(endpoint_t *this, void *buf, int nbytes) {
 
 /*
  * Use select to check if the this->fd has data.
- *  	1. return 0 if there is a timeout.
+ *  1. return 0 if there is a timeout.
  *	2. return 1 if not.
  */
+// Use select
 int has_data(endpoint_t *this, unsigned timeout_secs) {
-	unimplemented();
-        return 1;
+  struct timeval tv;
+  fd_set rfds; // Read fds
+
+	FD_ZERO(&rfds);
+  FD_SET(this->fd, &rfds);
+  tv.tv_sec = timeout_secs;
+  tv.tv_usec = 0;
+
+  int r;
+  if((r = select(this->fd+1, &rfds, NULL, NULL, &tv)) < 0)
+	  sys_die(select, "select failed");
+  
+  if(r == 0) return 0;
+  return 1;
 }
 
 /*
@@ -96,7 +125,10 @@ int has_data(endpoint_t *this, unsigned timeout_secs) {
 static int is_eof(endpoint_t *end) {
 	if(!has_data(end, timeout_secs))
 		err("process <%s> should have exited after 1 sec\n", end->name);
-	unimplemented();
+	
+  // If EOF, then a read call will return 0
+  char c;
+  if(read(end->fd, &c, 1) != 0) err("eof not read");
 	return 1;
 }
 
@@ -111,7 +143,19 @@ static int is_eof(endpoint_t *end) {
  */
 // endpoints write 1 byte at a time.  so can get a split.
 static int read_exact(endpoint_t *e, void *buf, int n, int can_fail_p) {
-	unimplemented();
+	int totalBytesRead = 0;
+  int bytesRead;
+  int offset = 0;
+  while (totalBytesRead < n && has_data(e, timeout_secs)) {
+    bytesRead = read(e->fd, buf + offset, n - totalBytesRead);
+    if (bytesRead <= 0) break;
+    totalBytesRead += bytesRead;
+    offset += bytesRead;
+  }
+  if (bytesRead < 0) {
+    if (!can_fail_p) err("read failed");
+    else return 0;
+  }
 	return 1;
 }
 
@@ -130,7 +174,7 @@ void replay(endpoint_t *end, int corrupt_op) {
 	for(int n = 0; e; e = Q_next(e), n++) {
 		// note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val);
 
-		unsigned v;
+		unsigned v = e->val;
 
 		// polarity of read/write will depend on if the unix
 		// or pi side is sending.   right now we just test 
@@ -139,25 +183,29 @@ void replay(endpoint_t *end, int corrupt_op) {
 		switch(e->op) {
 		case OP_READ8:
 		{
-			unimplemented();
+      unsigned char c = v;
+      write_exact(end, &c, 1);
 			break;
 		}
 
 		// replay'd process is GET32'ing, so we write to socket.
 		case OP_READ32:
 		{
-			unimplemented();
+			write_exact(end, &v, sizeof(unsigned));
 			break;
 		}
 		// replay'd process is PUT32'ing, so we read from socket.
 		case OP_WRITE32:
 			assert(n != corrupt_op);
-			unimplemented();
+      unsigned temp;
+			int ret = read_exact(end, &temp, sizeof(unsigned), can_fail_p);
+      if (ret != 1) err("read exact messed up");
+      if (temp != v) panic("values don't match; expected: %s:%d:%x, got %x\n", op_to_s(e->op), e->cnt, e->val, temp);
 			break;
 		default: panic("invalid op <%d>\n", e->op);
 		}
 
-		// note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val);
+		// note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 	}
 
 	// successfully consumed the log.

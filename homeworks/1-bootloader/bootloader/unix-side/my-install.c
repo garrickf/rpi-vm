@@ -2,7 +2,7 @@
 // Simple bootloader for an r/pi connected via a tty-USB device.
 //
 // Sketch: 
-//  1. read in program to send.
+//  	1. read in program to send.
 //	2. find the USB-tty serial device
 //	3. open the USB-tty serial device in 8n1 mode.
 //	4. send the program using a custom protocol.
@@ -114,13 +114,6 @@ int main(int argc, char *argv[]) {
         unsigned char *program = read_file(&prog_nbytes, name);
 
 	// open tty
-<<<<<<< HEAD
-	int fd = open_tty(&portname);
-  // GF: insert bit of code: print out the port name
-  // printf("portname after modification: %s\n", portname); // DEBUG
- 	// set it to be 8n1  and 115200 baud
-        fd = set_tty_to_8n1(fd, B115200, 2);
-=======
 	int fd;
 	if((fd = trace_get_fd()) < 0) {
 	 	fd = open_tty(&portname);
@@ -131,7 +124,6 @@ int main(int argc, char *argv[]) {
 		// giving the pi side a chance to get going.
 		sleep(1);
 	}
->>>>>>> c7bd1fa98fd8076a0a33827ecdf273ebbaec5424
 
 	// XXX: it appears that sometimes garbage is left in the tty connection.
 	// we try to drain it out.

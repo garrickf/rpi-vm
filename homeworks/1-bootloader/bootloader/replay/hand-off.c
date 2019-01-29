@@ -14,9 +14,16 @@
 #include "support.h"
 #include "demand.h"
 
+// TODO: 1. Look in `replay/hand-off.c`
+// 2. Implement `run` and `exit_code`.  The programsin `useful-examples`
+// in the lab directory will likely help.
+// 3. Make sure the test `make test.hand-off` is successful.
+
 // synchronously wait for <pid> to exit.  Return its exit code.
 static int exit_code(int pid) {
-	unimplemented();
+  int status;
+  if (waitpid(pid, &status, 0) < 0) sys_die(waitpid, "waitpid failed");
+  return WEXITSTATUS(status);
 }
 
 // run:
@@ -31,11 +38,18 @@ static int exit_code(int pid) {
 //  Note: that when you run my-install with tracing, the output
 //  should be identical to running it raw.
 void run(int fd, char *argv[]) {
-	int pid = 0;
-	unimplemented();
-	/* ... */
+  pid_t pid;
+	if ((pid = fork()) < 0) sys_die(fork, "fork failed");
 
-	fprintf(stderr, "child %d: exited with: %d\n", pid, exit_code(pid));
+  if (pid == 0) { // Child
+    if (dup2(fd, TRACE_FD_HANDOFF) < 0) sys_die(dup2, "dup2 failed");
+    if (close(fd) < 0) sys_die(close, "close failed");
+    
+    execvp(argv[0], argv);
+    sys_die(execvp, "execvp failed");
+  }
+  // Parent: wait for child process
+  fprintf(stderr, "child %d: exited with: %d\n", pid, exit_code(pid));
 }
 
 int main(int argc, char *argv[]) {
