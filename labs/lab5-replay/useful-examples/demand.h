@@ -14,6 +14,14 @@
 // note: 
 //	if <_msg> contains a ',' you'll have to put it in quotes.
 #define demand(_expr, _msg) do {					\
+	/* try to catch some side-effects */				\
+	int e1 = (_expr), e2 = (_expr);					\
+	if(e1 != e2) {							\
+		fprintf(stderr, "ERROR:%s:%s:%d:<"			\
+			_XSTRING(_expr) ">) has side-effects\n",	\
+			__FILE__, __FUNCTION__, __LINE__);		\
+		exit(1);						\
+	}								\
 	if(!(_expr)) { 							\
 		fprintf(stderr, "ERROR:%s:%s:%d: "			\
 			"FALSE(<" _XSTRING(_expr) ">): " _XSTRING(_msg) "\n",\
@@ -44,5 +52,4 @@
 /* Compile-time assertion used in function. */
 #define AssertNow(x) switch(1) { case (x): case 0: ; }
 
-#define unimplemented() panic("implement this function!\n");
 #endif /* __DEMAND_H__ */
