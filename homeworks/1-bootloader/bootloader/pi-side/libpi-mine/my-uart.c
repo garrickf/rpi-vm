@@ -61,7 +61,7 @@ struct aux_periphs {
 static struct aux_periphs * const uart = (void*)0x20215040; // See pg. 8 for mem address
 
 // Combine the read/write memory barriers to remove ambiguity in the code.
-void dev_barrier(void) {
+static void dev_barrier(void) {
 	dmb();
 	dsb();
 }
@@ -72,8 +72,8 @@ void dev_barrier(void) {
  * Sets up the GPIO pins for talking. To do so, uses functions in gpio.h
  * (gpio_set_function) to set the GPIO pins 14 and 15 to TXD1 and RXD1 (see pg. 102).
  */
-void init_gpio() {
-  gpio_set_function(14, GPIO_FUNC_ALT5);
+static void init_gpio() {
+  gpio_set_function(14, GPIO_FUNC_ALT5); // Uses gpio.h functions!
   gpio_set_function(15, GPIO_FUNC_ALT5);
 }
 
@@ -84,13 +84,13 @@ void init_gpio() {
  * AUX_MU_CNTL_REG register (see pg. 17). This lets us do housekeeping without any
  * spurious communication happening.
  */
-void clear_txrx() {
+static void clear_txrx() {
   unsigned value = get32(&uart->cntl);
   value = value & ~(0b11); // Zero out two lower bits
   put32(&uart->cntl, value);
 }
 
-void set_txrx() {
+static void set_txrx() {
   unsigned value = get32(&uart->cntl);
   value = value | 0b11; // Flip two lower bits
   put32(&uart->cntl, value);
@@ -98,13 +98,13 @@ void set_txrx() {
 
 // Sets the baudrate of the rpi to be 115200
 #define BAUDRATE 270 // Closest we can get!
-void set_baudrate() {
+static void set_baudrate() {
   unsigned baudrate = BAUDRATE; // Raw calculation: see pg. 11 (system clock: 250MHz)
   put32(&uart->baud, baudrate);
 }
 
 // Sets the bitmode to be 8 bits in the LCR register (see pg. 14)
-void set_bitmode() {
+static void set_bitmode() {
   unsigned value = get32(&uart->lcr);
   value = value | 0b11;
   put32(&uart->lcr, value);
@@ -117,7 +117,7 @@ void set_bitmode() {
  * have any garbage in them. To do this, we write 0b110 to bits 2:1 of
  * the IIR register (see pg. 13).
  */
-void clear_fifo_queues() {
+static void clear_fifo_queues() {
   unsigned reg = get32(&uart->iir);
   reg |= 0b110; // OR in 1's in bits 2:1
   put32(&uart->iir, reg);

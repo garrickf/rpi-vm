@@ -5,93 +5,93 @@ my-uart.o:     file format elf32-littlearm
 
 Disassembly of section .text:
 
-00000000 <dev_barrier>:
-   0:	e92d4008 	push	{r3, lr}
-   4:	ebfffffe 	bl	0 <dmb>
-   8:	ebfffffe 	bl	0 <dsb>
-   c:	e8bd8008 	pop	{r3, pc}
+00000000 <clear_txrx>:
+   0:	e92d4010 	push	{r4, lr}
+   4:	e59f4014 	ldr	r4, [pc, #20]	; 20 <clear_txrx+0x20>
+   8:	e1a00004 	mov	r0, r4
+   c:	ebfffffe 	bl	0 <get32>
+  10:	e3c01003 	bic	r1, r0, #3
+  14:	e1a00004 	mov	r0, r4
+  18:	ebfffffe 	bl	0 <put32>
+  1c:	e8bd8010 	pop	{r4, pc}
+  20:	20215060 	eorcs	r5, r1, r0, rrx
 
-00000010 <init_gpio>:
-  10:	e92d4008 	push	{r3, lr}
-  14:	e3a0000e 	mov	r0, #14
-  18:	e3a01002 	mov	r1, #2
-  1c:	ebfffffe 	bl	0 <gpio_set_function>
-  20:	e3a0000f 	mov	r0, #15
-  24:	e3a01002 	mov	r1, #2
-  28:	ebfffffe 	bl	0 <gpio_set_function>
-  2c:	e8bd8008 	pop	{r3, pc}
+00000024 <set_baudrate>:
+  24:	e92d4008 	push	{r3, lr}
+  28:	e59f0008 	ldr	r0, [pc, #8]	; 38 <set_baudrate+0x14>
+  2c:	e59f1008 	ldr	r1, [pc, #8]	; 3c <set_baudrate+0x18>
+  30:	ebfffffe 	bl	0 <put32>
+  34:	e8bd8008 	pop	{r3, pc}
+  38:	20215068 	eorcs	r5, r1, r8, rrx
+  3c:	0000010e 	andeq	r0, r0, lr, lsl #2
 
-00000030 <clear_txrx>:
-  30:	e92d4010 	push	{r4, lr}
-  34:	e59f4014 	ldr	r4, [pc, #20]	; 50 <clear_txrx+0x20>
-  38:	e1a00004 	mov	r0, r4
-  3c:	ebfffffe 	bl	0 <get32>
-  40:	e3c01003 	bic	r1, r0, #3
-  44:	e1a00004 	mov	r0, r4
-  48:	ebfffffe 	bl	0 <put32>
-  4c:	e8bd8010 	pop	{r4, pc}
-  50:	20215060 	eorcs	r5, r1, r0, rrx
+00000040 <set_bitmode>:
+  40:	e92d4010 	push	{r4, lr}
+  44:	e59f4014 	ldr	r4, [pc, #20]	; 60 <set_bitmode+0x20>
+  48:	e1a00004 	mov	r0, r4
+  4c:	ebfffffe 	bl	0 <get32>
+  50:	e3801003 	orr	r1, r0, #3
+  54:	e1a00004 	mov	r0, r4
+  58:	ebfffffe 	bl	0 <put32>
+  5c:	e8bd8010 	pop	{r4, pc}
+  60:	2021504c 	eorcs	r5, r1, ip, asr #32
 
-00000054 <set_txrx>:
-  54:	e92d4010 	push	{r4, lr}
-  58:	e59f4014 	ldr	r4, [pc, #20]	; 74 <set_txrx+0x20>
-  5c:	e1a00004 	mov	r0, r4
-  60:	ebfffffe 	bl	0 <get32>
-  64:	e3801003 	orr	r1, r0, #3
-  68:	e1a00004 	mov	r0, r4
-  6c:	ebfffffe 	bl	0 <put32>
-  70:	e8bd8010 	pop	{r4, pc}
-  74:	20215060 	eorcs	r5, r1, r0, rrx
+00000064 <clear_fifo_queues>:
+  64:	e92d4010 	push	{r4, lr}
+  68:	e59f4014 	ldr	r4, [pc, #20]	; 84 <clear_fifo_queues+0x20>
+  6c:	e1a00004 	mov	r0, r4
+  70:	ebfffffe 	bl	0 <get32>
+  74:	e3801006 	orr	r1, r0, #6
+  78:	e1a00004 	mov	r0, r4
+  7c:	ebfffffe 	bl	0 <put32>
+  80:	e8bd8010 	pop	{r4, pc}
+  84:	20215048 	eorcs	r5, r1, r8, asr #32
 
-00000078 <set_baudrate>:
-  78:	e92d4008 	push	{r3, lr}
-  7c:	e59f0008 	ldr	r0, [pc, #8]	; 8c <set_baudrate+0x14>
-  80:	e59f1008 	ldr	r1, [pc, #8]	; 90 <set_baudrate+0x18>
-  84:	ebfffffe 	bl	0 <put32>
-  88:	e8bd8008 	pop	{r3, pc}
-  8c:	20215068 	eorcs	r5, r1, r8, rrx
-  90:	0000010e 	andeq	r0, r0, lr, lsl #2
-
-00000094 <set_bitmode>:
-  94:	e92d4010 	push	{r4, lr}
-  98:	e59f4014 	ldr	r4, [pc, #20]	; b4 <set_bitmode+0x20>
+00000088 <set_txrx>:
+  88:	e92d4010 	push	{r4, lr}
+  8c:	e59f4014 	ldr	r4, [pc, #20]	; a8 <set_txrx+0x20>
+  90:	e1a00004 	mov	r0, r4
+  94:	ebfffffe 	bl	0 <get32>
+  98:	e3801003 	orr	r1, r0, #3
   9c:	e1a00004 	mov	r0, r4
-  a0:	ebfffffe 	bl	0 <get32>
-  a4:	e3801003 	orr	r1, r0, #3
-  a8:	e1a00004 	mov	r0, r4
-  ac:	ebfffffe 	bl	0 <put32>
-  b0:	e8bd8010 	pop	{r4, pc}
-  b4:	2021504c 	eorcs	r5, r1, ip, asr #32
+  a0:	ebfffffe 	bl	0 <put32>
+  a4:	e8bd8010 	pop	{r4, pc}
+  a8:	20215060 	eorcs	r5, r1, r0, rrx
 
-000000b8 <clear_fifo_queues>:
-  b8:	e92d4010 	push	{r4, lr}
-  bc:	e59f4014 	ldr	r4, [pc, #20]	; d8 <clear_fifo_queues+0x20>
-  c0:	e1a00004 	mov	r0, r4
-  c4:	ebfffffe 	bl	0 <get32>
-  c8:	e3801006 	orr	r1, r0, #6
-  cc:	e1a00004 	mov	r0, r4
-  d0:	ebfffffe 	bl	0 <put32>
-  d4:	e8bd8010 	pop	{r4, pc}
-  d8:	20215048 	eorcs	r5, r1, r8, asr #32
+000000ac <init_gpio>:
+  ac:	e92d4008 	push	{r3, lr}
+  b0:	e3a0000e 	mov	r0, #14
+  b4:	e3a01002 	mov	r1, #2
+  b8:	ebfffffe 	bl	0 <gpio_set_function>
+  bc:	e3a0000f 	mov	r0, #15
+  c0:	e3a01002 	mov	r1, #2
+  c4:	ebfffffe 	bl	0 <gpio_set_function>
+  c8:	e8bd8008 	pop	{r3, pc}
+
+000000cc <dev_barrier>:
+  cc:	e92d4008 	push	{r3, lr}
+  d0:	ebfffffe 	bl	0 <dmb>
+  d4:	ebfffffe 	bl	0 <dsb>
+  d8:	e8bd8008 	pop	{r3, pc}
 
 000000dc <uart_init>:
   dc:	e92d4010 	push	{r4, lr}
-  e0:	ebfffffe 	bl	0 <dev_barrier>
-  e4:	ebfffffe 	bl	10 <init_gpio>
-  e8:	ebfffffe 	bl	0 <dev_barrier>
+  e0:	ebfffff9 	bl	cc <dev_barrier>
+  e4:	ebfffff0 	bl	ac <init_gpio>
+  e8:	ebfffff7 	bl	cc <dev_barrier>
   ec:	e59f4030 	ldr	r4, [pc, #48]	; 124 <uart_init+0x48>
   f0:	e1a00004 	mov	r0, r4
   f4:	ebfffffe 	bl	0 <get32>
   f8:	e3801001 	orr	r1, r0, #1
   fc:	e1a00004 	mov	r0, r4
  100:	ebfffffe 	bl	0 <put32>
- 104:	ebfffffe 	bl	0 <dev_barrier>
- 108:	ebfffffe 	bl	30 <clear_txrx>
- 10c:	ebfffffe 	bl	78 <set_baudrate>
- 110:	ebfffffe 	bl	94 <set_bitmode>
- 114:	ebfffffe 	bl	b8 <clear_fifo_queues>
- 118:	ebfffffe 	bl	54 <set_txrx>
- 11c:	ebfffffe 	bl	0 <dev_barrier>
+ 104:	ebfffff0 	bl	cc <dev_barrier>
+ 108:	ebffffbc 	bl	0 <clear_txrx>
+ 10c:	ebffffc4 	bl	24 <set_baudrate>
+ 110:	ebffffca 	bl	40 <set_bitmode>
+ 114:	ebffffd2 	bl	64 <clear_fifo_queues>
+ 118:	ebffffda 	bl	88 <set_txrx>
+ 11c:	ebffffea 	bl	cc <dev_barrier>
  120:	e8bd8010 	pop	{r4, pc}
  124:	20215004 	eorcs	r5, r1, r4
 
