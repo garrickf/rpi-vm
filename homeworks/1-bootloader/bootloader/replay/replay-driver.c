@@ -118,16 +118,16 @@ int main(int argc, char *argv[]) {
 	struct Q q = read_input(stdin, 0);
 
 	// run the successful attempt N times --- should be the same.
-	for(int i = 0; i < N; i++)
-		check_success(q, argv);
+	// for(int i = 0; i < N; i++)
+	// 	check_success(q, argv);
 
 	// now try failures.  we iterate these N times as well, should
 	// get the same fails.
 	//
 	// NOTE: you can externalize the reads and writes and then 
 	// check against everyone else.
-	// for(int i = 0; i < N; i++)
-	// 	check_crashes(q, argv);
+	for(int i = 0; i < N; i++)
+		check_crashes(q, argv);
 
 #if 0
 	for(struct E *e = Q_start(&end.replay_log); e; e = Q_next(e)) 

@@ -78,12 +78,15 @@ static int proc_exit_code(endpoint_t *this) {
     return WEXITSTATUS(status);
 }
 
-static void write_exact(endpoint_t *this, void *buf, int nbytes) {
+static void write_exact(endpoint_t *this, void *buf, int nbytes, int can_fail_p) {
         int n;
-        if((n = write(this->fd, buf, nbytes)) < 0)
-                panic("i/o error writing to <%s> = <%s>\n",
+        if((n = write(this->fd, buf, nbytes)) < 0) {
+          // If i do a nonblocking waitpid, should be done (returns pid, status)
+          if (!can_fail_p) panic("i/o error writing to <%s> = <%s>\n",
                         this->name, strerror(errno));
-        demand(n == nbytes, something is wrong);
+        }  
+        if (!can_fail_p) demand(n == nbytes, something is wrong);
+        return;
 }
 
 /*
@@ -174,6 +177,7 @@ void replay(endpoint_t *end, int corrupt_op) {
 	for(int n = 0; e; e = Q_next(e), n++) {
 		note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 
+    // Set value, corrupt if needed
 		unsigned v = e->val;
     if (e->cnt == corrupt_op) {
       v = corrupt32(v);
@@ -188,14 +192,14 @@ void replay(endpoint_t *end, int corrupt_op) {
 		case OP_READ8:
 		{
       unsigned char c = v;
-      write_exact(end, &c, 1);
+      write_exact(end, &c, 1, can_fail_p);
 			break;
 		}
 
 		// replay'd process is GET32'ing, so we write to socket.
 		case OP_READ32:
 		{
-			write_exact(end, &v, sizeof(unsigned));
+			write_exact(end, &v, sizeof(unsigned), can_fail_p);
 			break;
 		}
 		// replay'd process is PUT32'ing, so we read from socket.
