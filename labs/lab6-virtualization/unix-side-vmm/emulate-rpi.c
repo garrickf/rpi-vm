@@ -54,10 +54,9 @@ void put_uint(unsigned u) {
         send_byte((u >> 24) & 0xff);
 }
 
-
 void rpi_reboot(void) {
 	printf("in reboot\n");
-	unimplemented();
+	put_uint(OP_DONE); // Send command
 	printf("done\n");
 	exit(0);
 }
@@ -68,16 +67,22 @@ void rpi_clean_reboot(void) {
 
 void rpi_PUT32(unsigned addr, unsigned v) {
 //	printf("need to send to the pi PUT32(<%x,%x>)\n", addr, v);
-	unimplemented();
+        put_uint(OP_WRITE32);
+        put_uint(addr);
+        put_uint(v);
 }
+
 void rpi_put32(volatile void *addr, unsigned v) {
 	rpi_PUT32((unsigned long)addr, v);
 }
 
 unsigned rpi_GET32(unsigned addr) {
 //	printf("need to send to the pi GET32(<%x>)\n", addr);
-	unimplemented();
+        put_uint(OP_READ32);
+        put_uint(addr);
+        return get_uint();
 }
+
 unsigned rpi_get32(const volatile void *addr) {
 	return rpi_GET32((unsigned long)addr);
 }
@@ -92,10 +97,14 @@ unsigned rpi_get32(const volatile void *addr) {
  * and you have to figure out what they are doing and what you 
  * should do in response.
  */
-void rpi_uart_init(void) {}
+void rpi_uart_init(void) {
+        uart_init();
+}
 
-int rpi_uart_getc(void);
+int rpi_uart_getc(void) {
+        return uart_getc();
+}
 
 void rpi_uart_putc(unsigned c) {
-	unimplemented();
+	uart_putc(c);
 }

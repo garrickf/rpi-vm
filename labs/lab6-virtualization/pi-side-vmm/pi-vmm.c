@@ -28,6 +28,9 @@ void put_uint(unsigned u) {
         send_byte((u >> 24) & 0xff);
 }
 
+#define PUT_COMMAND 0
+#define GET_COMMAND 1
+#define REBOOT_COMMAND 2
 // probably should put reply's and CRC32
 int notmain ( void ) {
 	uart_init();
@@ -36,6 +39,17 @@ int notmain ( void ) {
         put_uint(OP_READY);
         unsigned addr;
         while(1) {
-		/* have loop to handle requests, including OP_REBOOT */
+	       unsigned command = get_uint();
+               if (command == OP_WRITE32) {
+                        addr = get_uint();
+                        unsigned val = get_uint();
+                        PUT32(addr, val); // Use lower level on rpi
+               } else if (command == OP_READ32) {
+                        addr = get_uint();
+                        unsigned val = GET32(addr); // Use lower level on rpi
+                        put_uint(val);
+               } else if (command == OP_DONE) {
+                        reboot();
+               }
 	}
 }

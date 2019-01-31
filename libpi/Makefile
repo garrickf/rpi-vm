@@ -7,7 +7,8 @@
 #
 # TODO: You should replace these .o's with your code and remove
 # the use of SUPPORT_OBJS
-SUPPORT_OBJS= cs140e-gpioextra.o cs140e-uart.o 
+# XXX: note, added my-uart, mem-barrier
+# SUPPORT_OBJS= cs140e-gpioextra.o cs140e-uart.o 
 
 START= cs140e-start.o
 
@@ -20,7 +21,8 @@ SRC = 	cs140e-printf.c  	\
 	cs140e-stdlib.c		\
 	cs140e-cstart.c		\
 	my-gpio.c		\
-	cs140e-put-get.s
+	cs140e-put-get.s  \
+  my-uart.c # New file
 
 # defines CC, etc.
 include includes.mk
