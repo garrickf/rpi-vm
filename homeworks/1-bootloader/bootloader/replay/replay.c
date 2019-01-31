@@ -175,14 +175,14 @@ void replay(endpoint_t *end, int corrupt_op) {
 
 	E_t *e = Q_start(&end->replay_log);
 	for(int n = 0; e; e = Q_next(e), n++) {
-		note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
+		// note("about to do op= <%s:%d:%x>\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 
     // Set value, corrupt if needed
 		unsigned v = e->val;
-    if (e->cnt == corrupt_op) {
-      v = corrupt32(v);
-      can_fail_p = 1;
-    }
+	    if (e->cnt == corrupt_op) {
+	      v = corrupt32(v);
+	      can_fail_p = 1;
+	    }
 
 		// polarity of read/write will depend on if the unix
 		// or pi side is sending.   right now we just test 
@@ -216,7 +216,7 @@ void replay(endpoint_t *end, int corrupt_op) {
 		default: panic("invalid op <%d>\n", e->op);
 		}
 
-		note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
+		// note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val); // DEBUG
 	}
 
 	// successfully consumed the log.

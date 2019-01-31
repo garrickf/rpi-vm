@@ -97,8 +97,6 @@ void check_crashes(Q_t replay_log, char *argv[]) {
 
 // check no failure.
 void check_success(Q_t replay_log, char *argv[]) {
-		if(signal(SIGPIPE, SIG_IGN) < 0)
-                sys_die(signal, cannot catch);
 	endpoint_t end = mk_endpoint_proc("unix.side", replay_log, &argv[1]);
 	replay(&end, -1);
 	destroy_end(&end);
@@ -118,8 +116,8 @@ int main(int argc, char *argv[]) {
 	struct Q q = read_input(stdin, 0);
 
 	// run the successful attempt N times --- should be the same.
-	// for(int i = 0; i < N; i++)
-	// 	check_success(q, argv);
+	for(int i = 0; i < N; i++)
+		check_success(q, argv);
 
 	// now try failures.  we iterate these N times as well, should
 	// get the same fails.
