@@ -20,6 +20,7 @@ SRC = 	cs140e-printf.c  	\
 	cs140e-mem-barrier.s  	\
 	cs140e-stdlib.c		\
 	cs140e-cstart.c		\
+	cs140e-rand.c		\
 	my-gpio.c		\
 	cs140e-put-get.s  \
   my-uart.c # New file
@@ -38,10 +39,6 @@ TARGET = libpi.a
 
 all : $(TARGET) $(START)
 
-.s.o:
-	$(AS) $(ASFLAGS) $< -o $@ 
-.c.o:
-	$(CC) $(CFLAGS) -c $<  -o $@
 
 # we bundle start.s with the library: just make different ones for each
 # different start so that the library is internally consistent.
@@ -49,8 +46,33 @@ $(TARGET): $(LIB_OBJS) $(SUPPORT_OBJS)
 	arm-none-eabi-ar crf $(TARGET) $^ 
 	$(OD) -D $@ > $@.list
 
+
+# pull in dependency info for *existing* .o files
+-include $(LIB_OBJS:.o=.d)
+
+# compile and generate dependency info;
+# more complicated dependency computation, so all prereqs listed
+# will also become command-less, prereq-less targets
+#   sed:    strip the target (everything before colon)
+#   sed:    remove any continuation backslashes
+#   fmt -1: list words one per line
+#   sed:    strip leading spaces
+#   sed:    add trailing colons
+%.o: %.c
+	$(CC) -c $(CFLAGS) $*.c -o $*.o
+	$(CC) -MM $(CFLAGS) $*.c > $*.d
+	@mv -f $*.d $*.d.tmp
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
+
+.s.o: 
+	$(AS) $(ASFLAGS) $< -o $@
+
+
 clean :
-	rm -f $(LIB_OBJS) cs140e-start.o *.bin *.hex *.elf *.list *.img *~ $(TARGET)  Makefile.bak 
+	rm -f $(LIB_OBJS) cs140e-start.o *.bin *.hex *.elf *.list *.img *~ $(TARGET)  Makefile.bak  *.d
 
 depend: 
 	makedepend $(SRC)

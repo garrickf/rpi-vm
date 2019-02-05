@@ -19,6 +19,7 @@ void int_handler(unsigned pc) {
 	unsigned pending = RPI_GetIRQController()->IRQ_basic_pending;
 
 	// if this isn't true, could be a GPU interrupt: just return.
+	// 	- possibly worth counting these.
 	if((pending & RPI_BASIC_ARM_TIMER_IRQ) == 0)
 		return;
 
@@ -43,25 +44,27 @@ void int_handler(unsigned pc) {
 void notmain() {
 	uart_init();
 	
-	printf("about to install handlers\n");
+	printk("about to install handlers\n");
         install_int_handlers();
 
-	printf("setting up timer interrupts\n");
+	printk("setting up timer interrupts\n");
 	// Q: if you change 0x100?
-	timer_interrupt_init(0x10);
+	timer_interrupt_init(0x1);
 
-	printf("gonna enable ints globally!\n");
+	printk("gonna enable ints globally!\n");
 
 	// Q: if you don't do?
   	system_enable_interrupts();
-	printf("enabled!\n");
+	printk("enabled!\n");
 
 	// enable_cache(); 	// Q: what happens if you enable cache?
 	unsigned iter = 0;
-	while(cnt<20) {
-		printf("iter=%d: cnt = %d, period = %dusec, %x\n", 
+
+	// may have to bump this up.
+	while(cnt<200) {
+		printk("iter=%d: cnt = %d, period = %dusec, %x\n", 
 				iter,cnt, period,period);
 		iter++;
 	}
-	debug("DONE!!!");
+	clean_reboot();
 }
