@@ -1,5 +1,5 @@
-# you need to change this to where your sd card goes.
-SD_PATH = /media/engler/0403-0201/
+# Updated Makefile to point to SD card. Result? Easy installation of the kernel.img that's compiled.
+SD_PATH = /Volumes/Untitled/
 
 ifndef SD_PATH
 $(error SD_PATH is not set: give absolute path to where your sd card is mounted)

@@ -383,16 +383,16 @@ Disassembly of section .text:
 
 Disassembly of section .bss:
 
-00000000 <buf.3848>:
+00000000 <buf.3858>:
 	...
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3806>:
+00000000 <__FUNCTION__.3816>:
    0:	74696d65 	strbtvc	r6, [r9], #-3429	; 0xd65
    4:	00000000 	andeq	r0, r0, r0
 
-00000008 <__FUNCTION__.3821>:
+00000008 <__FUNCTION__.3831>:
    8:	705f6176 	subsvc	r6, pc, r6, ror r1	; <UNPREDICTABLE>
    c:	746e6972 	strbtvc	r6, [lr], #-2418	; 0x972
   10:	0000006b 	andeq	r0, r0, fp, rrx
@@ -550,7 +550,7 @@ Disassembly of section .text:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3757>:
+00000000 <__FUNCTION__.3767>:
    0:	5f697072 	svcpl	0x00697072
    4:	6f626572 	svcvs	0x00626572
    8:	0000746f 	andeq	r7, r0, pc, ror #8
