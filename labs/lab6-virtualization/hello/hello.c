@@ -3,6 +3,6 @@
 
 void notmain(void) {
 	uart_init();
-	printf("hello world\n");
+	printk("hello world\n");
 	clean_reboot();
 }
