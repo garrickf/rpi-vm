@@ -2,7 +2,7 @@ CC= arm-none-eabi-gcc
 CFLAGS = -I$(LIBPI)/.. -I. -Wall -Og -nostdlib -nostartfiles -ffreestanding 
 
 #LIBPI = libpi.small
-LIBPI = libpi-mine
+#LIBPI = libpi-mine
 
 SRC = bootloader.c 
 OBJS = $(SRC:.c=.o)

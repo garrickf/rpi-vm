@@ -1,7 +1,7 @@
 /*
 	simple timer interrupt demonstration.
 
-      Good timer / interrupt discussion at:
+    Good timer / interrupt discussion at:
  	http://www.valvers.com/open-software/raspberry-pi/step04-bare-metal-programming-in-c-pt4/
 
 	Most of this code is from here.
@@ -23,14 +23,14 @@ void int_handler(unsigned pc) {
 	if((pending & RPI_BASIC_ARM_TIMER_IRQ) == 0)
 		return;
 
-        /* 
+	/* 
 	 * Clear the ARM Timer interrupt - it's the only interrupt we have
-         * enabled, so we want don't have to work out which interrupt source
-         * caused us to interrupt 
+	 * enabled, so we want don't have to work out which interrupt source
+	 * caused us to interrupt 
 	 *
-	 * Q: if we delete?
+	 * Q: if we delete? A: We still think there's an interrupt pending, so we go back in and hang.
 	 */
-        RPI_GetArmTimer()->IRQClear = 1;
+	RPI_GetArmTimer()->IRQClear = 1;
 	cnt++;
 
 	static unsigned last_clk = 0;
@@ -45,7 +45,7 @@ void notmain() {
 	uart_init();
 	
 	printk("about to install handlers\n");
-        install_int_handlers();
+	install_int_handlers();
 
 	printk("setting up timer interrupts\n");
 	// Q: if you change 0x100?
@@ -54,7 +54,7 @@ void notmain() {
 	printk("gonna enable ints globally!\n");
 
 	// Q: if you don't do?
-  	system_enable_interrupts();
+	system_enable_interrupts();
 	printk("enabled!\n");
 
 	// enable_cache(); 	// Q: what happens if you enable cache?
@@ -63,7 +63,7 @@ void notmain() {
 	// may have to bump this up.
 	while(cnt<200) {
 		printk("iter=%d: cnt = %d, period = %dusec, %x\n", 
-				iter,cnt, period,period);
+			iter,cnt, period,period);
 		iter++;
 	}
 	clean_reboot();

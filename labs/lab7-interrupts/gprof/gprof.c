@@ -9,7 +9,6 @@
 #include "rpi.h"
 #include "timer-interrupt.h"
 
-
 /**********************************************************************
  * trivial kmalloc:  
  *	- do first.  check that its output makes sense!
@@ -25,8 +24,12 @@
  *	- note: there is no free, so is trivial.
  * 	- should be just a few lines of code.
  */
+extern char __heap_start__;
+static char *heap_ptr = 0x0;
 void *kmalloc(unsigned nbytes) {
-	unimplemented();
+	char *curr = heap_ptr;
+	heap_ptr += roundup(nbytes, 8); // Roundup by 8 bytes
+	return curr;
 }
 
 /*
@@ -34,7 +37,8 @@ void *kmalloc(unsigned nbytes) {
  * 	- should be just a few lines of code.
  */
 void kmalloc_init(void) {
-	unimplemented();
+	printk("heap start: %x\n", &__heap_start__);
+	heap_ptr = &__heap_start__;
 }
 
 /***************************************************************************
@@ -46,22 +50,37 @@ void kmalloc_init(void) {
  */
 
 // allocate table.
-//    few lines of code
+// few lines of code
+
+extern char __bss_start__;
+#define ARMBASE 0x8000
+static unsigned *histogram;
 static unsigned gprof_init(void) {
-	unimplemented();
+	// How many instructions are there?
+	unsigned numInstructions = ((unsigned)&__bss_start__ - ARMBASE) / 4;
+	histogram = kmalloc(sizeof(unsigned) * numInstructions);
+	return 1;
 }
 
 // increment histogram associated w/ pc.
-//    few lines of code
+// few lines of code
 static void gprof_inc(unsigned pc) {
-	unimplemented();
+	// printk("what is this: %x\n", pc);
+	if (pc < ARMBASE || pc >= (unsigned)&__bss_start__) {
+		panic("Instruction seems to be out of bounds");
+	}
+	unsigned idx = (pc - ARMBASE) / 4;
+	histogram[idx]++;
 }
 
 // print out all samples whose count > min_val
-//
 // make sure sampling does not pick this code up!
 static void gprof_dump(unsigned min_val) {
-	unimplemented();
+	unsigned numInstructions = ((unsigned)&__bss_start__ - ARMBASE) / 4;
+	for (unsigned i = 0; i < numInstructions; i++) {
+		if (histogram[i] > min_val)
+			printk("instruction addr 0x%x, count: %u\n", i * 4 + ARMBASE, histogram[i]);
+	}
 }
 
 
@@ -113,8 +132,8 @@ void notmain() {
 	timer_interrupt_init(0x10);
 
 	// could combine some of these.
-        gprof_init();
 	kmalloc_init();
+    gprof_init();
 
 	// Q: if you don't do?
 	printk("gonna enable ints globally!\n");
