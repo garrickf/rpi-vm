@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "demand.h" 
+#include "demand.h" // Why do we need this?
 #include "pi-vmm-ops.h"
 #include "vmm.h"
 
