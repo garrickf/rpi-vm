@@ -49,7 +49,7 @@ int notmain ( void ) {
                         unsigned val = GET32(addr); // Use lower level on rpi
                         put_uint(val);
                } else if (command == OP_DONE) {
-                        reboot();
+                        rpi_reboot();
                }
 	}
 }
