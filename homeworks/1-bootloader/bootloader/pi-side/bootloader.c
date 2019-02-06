@@ -12,7 +12,8 @@
 
 #define __SIMPLE_IMPL__
 #include "../shared-code/simple-boot.h" // For error codes
-#include "libpi.small/rpi.h"            // For PUT32, uart_ functions
+// #include "libpi.small/rpi.h"            // For PUT32, uart_ functions
+#include "rpi.h" // When using base libpi directory
 
 /*
  * send_byte
@@ -70,7 +71,7 @@ static void put_uint(unsigned u) {
  */
 static void die(int code) {
   put_uint(code);
-  reboot();
+  rpi_reboot();
 }
 
 //  Steps:
@@ -88,6 +89,8 @@ static void die(int code) {
  * ---
  * The main bootloader routine.
  */
+extern char __bss_start__; // For calculating size of notmain 
+
 void notmain(void) {
 	uart_init(); // This hooks into our UART implementation!
 
@@ -102,6 +105,8 @@ void notmain(void) {
   unsigned nBytes = get_uint();
   unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
   unsigned fileHash = get_uint();
+
+  if (nBytes >= 10000) die(TOO_BIG); // TODO: fix, ask dawson
 
   put_uint(SOH);
   put_uint(nBytesHash);
@@ -129,5 +134,5 @@ void notmain(void) {
 	// run what client sent.
   BRANCHTO(ARMBASE);
 	// should not get back here, but just in case.
-	reboot();
+	rpi_reboot();
 }

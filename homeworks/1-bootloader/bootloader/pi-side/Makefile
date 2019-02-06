@@ -2,10 +2,20 @@ CC= arm-none-eabi-gcc
 CFLAGS = -I$(LIBPI)/.. -I. -Wall -Og -nostdlib -nostartfiles -ffreestanding 
 
 #LIBPI = libpi.small
-#LIBPI = libpi-mine
 
 SRC = bootloader.c 
 OBJS = $(SRC:.c=.o)
+
+# Added path to main/base libpi. All changes should be made there!
+ifndef LIBPI_PATH
+$(error LIBPI_PATH is not set: this should contain the absolute path to where this directory is.  Define it in your shell's initialiation.  For example, .tcshrc for tcsh or .bashrc for bash)
+endif
+
+LIBPI = LIBPI_PATH
+
+# useful set of defines.
+include $(LIBPI_PATH)/includes.mk
+# End my addins ##################
 
 all : kernel.img
 
@@ -13,9 +23,9 @@ start.o : start.s
 	arm-none-eabi-as start.s -o start.o
 
 kernel.img : memmap start.o $(OBJS)
-	make -C libpi.small
+#	make -C libpi.small
 #	arm-none-eabi-ld start.o $(OBJS) libpi.small/libpi.a -T memmap -o bootloader.elf
-	arm-none-eabi-ld start.o $(OBJS) libpi-mine/libpi.a -T memmap -o bootloader.elf
+	arm-none-eabi-ld start.o $(OBJS) $(LIBPI_PATH)/libpi.a -T memmap -o bootloader.elf
 	arm-none-eabi-objdump -D bootloader.elf > bootloader.list
 	arm-none-eabi-objcopy bootloader.elf -O binary kernel.img
 

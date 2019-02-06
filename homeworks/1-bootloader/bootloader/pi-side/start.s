@@ -7,7 +7,8 @@ _start:
 skip:
     mov sp,#0x08000000
     bl notmain
-hang: b reboot
+hang: b rpi_reboot
+# Note: ^^ had to change to rpi_reboot if using libpi base
 
 .globl BRANCHTO
 BRANCHTO:
