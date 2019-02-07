@@ -1074,118 +1074,84 @@ Disassembly of section .text:
    8:	ebfffffe 	bl	0 <dsb>
    c:	e8bd8008 	pop	{r3, pc}
 
-00000010 <init_gpio>:
-  10:	e92d4008 	push	{r3, lr}
-  14:	e3a0000e 	mov	r0, #14
-  18:	e3a01002 	mov	r1, #2
-  1c:	ebfffffe 	bl	0 <gpio_set_function>
-  20:	e3a0000f 	mov	r0, #15
-  24:	e3a01002 	mov	r1, #2
-  28:	ebfffffe 	bl	0 <gpio_set_function>
-  2c:	e8bd8008 	pop	{r3, pc}
-
-00000030 <clear_txrx>:
-  30:	e92d4010 	push	{r4, lr}
-  34:	e59f4014 	ldr	r4, [pc, #20]	; 50 <clear_txrx+0x20>
+00000010 <uart_init>:
+  10:	e92d4038 	push	{r3, r4, r5, lr}
+  14:	ebfffffe 	bl	0 <dev_barrier>
+  18:	e3a0000e 	mov	r0, #14
+  1c:	e3a01002 	mov	r1, #2
+  20:	ebfffffe 	bl	0 <gpio_set_function>
+  24:	e3a0000f 	mov	r0, #15
+  28:	e3a01002 	mov	r1, #2
+  2c:	ebfffffe 	bl	0 <gpio_set_function>
+  30:	ebfffffe 	bl	0 <dev_barrier>
+  34:	e59f4084 	ldr	r4, [pc, #132]	; c0 <uart_init+0xb0>
   38:	e1a00004 	mov	r0, r4
   3c:	ebfffffe 	bl	0 <get32>
-  40:	e3c01003 	bic	r1, r0, #3
+  40:	e3801001 	orr	r1, r0, #1
   44:	e1a00004 	mov	r0, r4
   48:	ebfffffe 	bl	0 <put32>
-  4c:	e8bd8010 	pop	{r4, pc}
-  50:	20215060 	eorcs	r5, r1, r0, rrx
+  4c:	ebfffffe 	bl	0 <dev_barrier>
+  50:	e284405c 	add	r4, r4, #92	; 0x5c
+  54:	e1a00004 	mov	r0, r4
+  58:	ebfffffe 	bl	0 <get32>
+  5c:	e3c01003 	bic	r1, r0, #3
+  60:	e1a00004 	mov	r0, r4
+  64:	ebfffffe 	bl	0 <put32>
+  68:	e59f0054 	ldr	r0, [pc, #84]	; c4 <uart_init+0xb4>
+  6c:	e59f1054 	ldr	r1, [pc, #84]	; c8 <uart_init+0xb8>
+  70:	ebfffffe 	bl	0 <put32>
+  74:	e59f5050 	ldr	r5, [pc, #80]	; cc <uart_init+0xbc>
+  78:	e1a00005 	mov	r0, r5
+  7c:	ebfffffe 	bl	0 <get32>
+  80:	e3801003 	orr	r1, r0, #3
+  84:	e1a00005 	mov	r0, r5
+  88:	ebfffffe 	bl	0 <put32>
+  8c:	e2455004 	sub	r5, r5, #4
+  90:	e1a00005 	mov	r0, r5
+  94:	ebfffffe 	bl	0 <get32>
+  98:	e3801006 	orr	r1, r0, #6
+  9c:	e1a00005 	mov	r0, r5
+  a0:	ebfffffe 	bl	0 <put32>
+  a4:	e1a00004 	mov	r0, r4
+  a8:	ebfffffe 	bl	0 <get32>
+  ac:	e3801003 	orr	r1, r0, #3
+  b0:	e1a00004 	mov	r0, r4
+  b4:	ebfffffe 	bl	0 <put32>
+  b8:	ebfffffe 	bl	0 <dev_barrier>
+  bc:	e8bd8038 	pop	{r3, r4, r5, pc}
+  c0:	20215004 	eorcs	r5, r1, r4
+  c4:	20215068 	eorcs	r5, r1, r8, rrx
+  c8:	0000010e 	andeq	r0, r0, lr, lsl #2
+  cc:	2021504c 	eorcs	r5, r1, ip, asr #32
 
-00000054 <set_txrx>:
-  54:	e92d4010 	push	{r4, lr}
-  58:	e59f4014 	ldr	r4, [pc, #20]	; 74 <set_txrx+0x20>
-  5c:	e1a00004 	mov	r0, r4
-  60:	ebfffffe 	bl	0 <get32>
-  64:	e3801003 	orr	r1, r0, #3
-  68:	e1a00004 	mov	r0, r4
-  6c:	ebfffffe 	bl	0 <put32>
-  70:	e8bd8010 	pop	{r4, pc}
-  74:	20215060 	eorcs	r5, r1, r0, rrx
+000000d0 <uart_getc>:
+  d0:	e92d4010 	push	{r4, lr}
+  d4:	e59f401c 	ldr	r4, [pc, #28]	; f8 <uart_getc+0x28>
+  d8:	e1a00004 	mov	r0, r4
+  dc:	ebfffffe 	bl	0 <get32>
+  e0:	e3100001 	tst	r0, #1
+  e4:	0afffffb 	beq	d8 <uart_getc+0x8>
+  e8:	e59f000c 	ldr	r0, [pc, #12]	; fc <uart_getc+0x2c>
+  ec:	ebfffffe 	bl	0 <get32>
+  f0:	e6ef0070 	uxtb	r0, r0
+  f4:	e8bd8010 	pop	{r4, pc}
+  f8:	20215054 	eorcs	r5, r1, r4, asr r0
+  fc:	20215040 	eorcs	r5, r1, r0, asr #32
 
-00000078 <set_baudrate>:
-  78:	e92d4008 	push	{r3, lr}
-  7c:	e59f0008 	ldr	r0, [pc, #8]	; 8c <set_baudrate+0x14>
-  80:	e59f1008 	ldr	r1, [pc, #8]	; 90 <set_baudrate+0x18>
-  84:	ebfffffe 	bl	0 <put32>
-  88:	e8bd8008 	pop	{r3, pc}
-  8c:	20215068 	eorcs	r5, r1, r8, rrx
-  90:	0000010e 	andeq	r0, r0, lr, lsl #2
-
-00000094 <set_bitmode>:
-  94:	e92d4010 	push	{r4, lr}
-  98:	e59f4014 	ldr	r4, [pc, #20]	; b4 <set_bitmode+0x20>
-  9c:	e1a00004 	mov	r0, r4
-  a0:	ebfffffe 	bl	0 <get32>
-  a4:	e3801003 	orr	r1, r0, #3
-  a8:	e1a00004 	mov	r0, r4
-  ac:	ebfffffe 	bl	0 <put32>
-  b0:	e8bd8010 	pop	{r4, pc}
-  b4:	2021504c 	eorcs	r5, r1, ip, asr #32
-
-000000b8 <clear_fifo_queues>:
-  b8:	e92d4010 	push	{r4, lr}
-  bc:	e59f4014 	ldr	r4, [pc, #20]	; d8 <clear_fifo_queues+0x20>
-  c0:	e1a00004 	mov	r0, r4
-  c4:	ebfffffe 	bl	0 <get32>
-  c8:	e3801006 	orr	r1, r0, #6
-  cc:	e1a00004 	mov	r0, r4
-  d0:	ebfffffe 	bl	0 <put32>
-  d4:	e8bd8010 	pop	{r4, pc}
-  d8:	20215048 	eorcs	r5, r1, r8, asr #32
-
-000000dc <uart_init>:
-  dc:	e92d4010 	push	{r4, lr}
-  e0:	ebfffffe 	bl	0 <dev_barrier>
-  e4:	ebfffffe 	bl	10 <init_gpio>
-  e8:	ebfffffe 	bl	0 <dev_barrier>
-  ec:	e59f4030 	ldr	r4, [pc, #48]	; 124 <uart_init+0x48>
-  f0:	e1a00004 	mov	r0, r4
-  f4:	ebfffffe 	bl	0 <get32>
-  f8:	e3801001 	orr	r1, r0, #1
-  fc:	e1a00004 	mov	r0, r4
- 100:	ebfffffe 	bl	0 <put32>
- 104:	ebfffffe 	bl	0 <dev_barrier>
- 108:	ebfffffe 	bl	30 <clear_txrx>
- 10c:	ebfffffe 	bl	78 <set_baudrate>
- 110:	ebfffffe 	bl	94 <set_bitmode>
- 114:	ebfffffe 	bl	b8 <clear_fifo_queues>
- 118:	ebfffffe 	bl	54 <set_txrx>
- 11c:	ebfffffe 	bl	0 <dev_barrier>
- 120:	e8bd8010 	pop	{r4, pc}
- 124:	20215004 	eorcs	r5, r1, r4
-
-00000128 <uart_getc>:
- 128:	e92d4010 	push	{r4, lr}
- 12c:	e59f401c 	ldr	r4, [pc, #28]	; 150 <uart_getc+0x28>
- 130:	e1a00004 	mov	r0, r4
- 134:	ebfffffe 	bl	0 <get32>
- 138:	e3100001 	tst	r0, #1
- 13c:	0afffffb 	beq	130 <uart_getc+0x8>
- 140:	e59f000c 	ldr	r0, [pc, #12]	; 154 <uart_getc+0x2c>
- 144:	ebfffffe 	bl	0 <get32>
- 148:	e6ef0070 	uxtb	r0, r0
- 14c:	e8bd8010 	pop	{r4, pc}
- 150:	20215054 	eorcs	r5, r1, r4, asr r0
- 154:	20215040 	eorcs	r5, r1, r0, asr #32
-
-00000158 <uart_putc>:
- 158:	e92d4038 	push	{r3, r4, r5, lr}
- 15c:	e1a05000 	mov	r5, r0
- 160:	e59f401c 	ldr	r4, [pc, #28]	; 184 <uart_putc+0x2c>
- 164:	e1a00004 	mov	r0, r4
- 168:	ebfffffe 	bl	0 <get32>
- 16c:	e3100020 	tst	r0, #32
- 170:	0afffffb 	beq	164 <uart_putc+0xc>
- 174:	e59f000c 	ldr	r0, [pc, #12]	; 188 <uart_putc+0x30>
- 178:	e6ef1075 	uxtb	r1, r5
- 17c:	ebfffffe 	bl	0 <put32>
- 180:	e8bd8038 	pop	{r3, r4, r5, pc}
- 184:	20215054 	eorcs	r5, r1, r4, asr r0
- 188:	20215040 	eorcs	r5, r1, r0, asr #32
+00000100 <uart_putc>:
+ 100:	e92d4038 	push	{r3, r4, r5, lr}
+ 104:	e1a05000 	mov	r5, r0
+ 108:	e59f401c 	ldr	r4, [pc, #28]	; 12c <uart_putc+0x2c>
+ 10c:	e1a00004 	mov	r0, r4
+ 110:	ebfffffe 	bl	0 <get32>
+ 114:	e3100020 	tst	r0, #32
+ 118:	0afffffb 	beq	10c <uart_putc+0xc>
+ 11c:	e59f000c 	ldr	r0, [pc, #12]	; 130 <uart_putc+0x30>
+ 120:	e6ef1075 	uxtb	r1, r5
+ 124:	ebfffffe 	bl	0 <put32>
+ 128:	e8bd8038 	pop	{r3, r4, r5, pc}
+ 12c:	20215054 	eorcs	r5, r1, r4, asr r0
+ 130:	20215040 	eorcs	r5, r1, r0, asr #32
 
 Disassembly of section .comment:
 

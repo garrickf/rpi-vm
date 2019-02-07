@@ -109,9 +109,9 @@ void check_success(Q_t replay_log, char *argv[]) {
  *  	diff hello.trace.txt t.txt
  */
 int main(int argc, char *argv[]) { 
-	demand(argc > 1, no arguments?);
+	demand(argc > 1, "no arguments?");
 
-	const int N = 1000;
+	const int N = 10;
 	srandom(0); 	// so everyone has the same.
 	struct Q q = read_input(stdin, 0);
 
