@@ -31,7 +31,7 @@ int gpio_set_input(unsigned pin) {
 }
 
 int gpio_set_off(unsigned pin) {
-	if(pin >= 32)
+  if(pin >= 32)
 		return -1;
 	PUT32(GPCLR0, 1 << pin);
 	return 0;
