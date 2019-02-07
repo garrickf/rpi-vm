@@ -1,12 +1,14 @@
-timer-interrupt.o: timer-interrupt.c \
+../../lab7-interrupts/timer-int//timer-interrupt.o: ../../lab7-interrupts/timer-int//timer-interrupt.c \
  /Users/garrick/dev/cs140e/cs140e-win19/libpi/rpi.h \
  /Users/garrick/dev/cs140e/cs140e-win19/libpi/gpio.h \
- /Users/garrick/dev/cs140e/cs140e-win19/libpi/assert.h timer-interrupt.h \
- rpi-armtimer.h rpi-interrupts.h
-timer-interrupt.c:
+ /Users/garrick/dev/cs140e/cs140e-win19/libpi/assert.h \
+ ../../lab7-interrupts/timer-int//timer-interrupt.h \
+ ../../lab7-interrupts/timer-int//rpi-armtimer.h \
+ ../../lab7-interrupts/timer-int//rpi-interrupts.h
+../../lab7-interrupts/timer-int//timer-interrupt.c:
 /Users/garrick/dev/cs140e/cs140e-win19/libpi/rpi.h:
 /Users/garrick/dev/cs140e/cs140e-win19/libpi/gpio.h:
 /Users/garrick/dev/cs140e/cs140e-win19/libpi/assert.h:
-timer-interrupt.h:
-rpi-armtimer.h:
-rpi-interrupts.h:
+../../lab7-interrupts/timer-int//timer-interrupt.h:
+../../lab7-interrupts/timer-int//rpi-armtimer.h:
+../../lab7-interrupts/timer-int//rpi-interrupts.h:

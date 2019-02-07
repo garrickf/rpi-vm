@@ -13,11 +13,15 @@
  */
 #include "rpi.h"
 
+// Set constants for pins
+const unsigned trigger = 26, // Green
+	echo = 19, // Blue
+	led = 20;
+
 void notmain(void) {
-        uart_init();
+    uart_init();
 
 	printk("starting sonar!\n");
-
 
 	// put your code here.  
 	//
@@ -44,6 +48,37 @@ void notmain(void) {
 	//	
 	// 	3. the initial 3 page data sheet you'll find sucks; look for
 	// 	a longer one. 
+	gpio_set_function(trigger, GPIO_FUNC_OUTPUT);
+	gpio_set_function(led, GPIO_FUNC_OUTPUT);
+	gpio_set_function(echo, GPIO_FUNC_INPUT);
+	gpio_set_pulldown(echo); // Keep it down
+
+	while (1) {
+		printk("sending signal!\n");
+		gpio_set_on(trigger);
+		delay_us(10);
+		gpio_set_off(trigger);
+
+		while (1) { // Wait for first signal loop
+			if (gpio_read(echo)) break;
+		}
+		// printk("found echo!\n");
+
+		unsigned st = timer_get_time();
+		unsigned end;
+		while (1) { // Measure loop
+			end = timer_get_time();
+			if (!gpio_read(echo)) {
+				printk("dist: %d thou.\n", (end - st) * 1000 / 148);
+				break;
+			}
+			if ((end - st) > 38 * 1000) {
+				printk("timeout!\n");
+				break;
+			}
+		}
+		delay_ms(1000);
+	}
 
 	printk("stopping sonar !\n");
 	clean_reboot();
