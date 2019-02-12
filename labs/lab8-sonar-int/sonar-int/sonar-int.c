@@ -91,7 +91,7 @@ void notmain() {
     gpio_set_output(led);
     gpio_set_output(trigger);
     gpio_set_input(echo);
-    gpio_set_pulldown(echo);
+    gpio_set_pullup(echo);
 
 
 	// do last!

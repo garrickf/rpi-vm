@@ -70,7 +70,6 @@ endpoint_t mk_endpoint_proc(const char *name, Q_t q, char *argv[]) {
  * 	1. if exited cleanly, return it's error code.
  *	2. otherwise return -1.
  */
-// TODO: implement, select: timeout on a read call
 static int proc_exit_code(endpoint_t *this) {
 	// use your hand-off code (more or less)
 	int status;

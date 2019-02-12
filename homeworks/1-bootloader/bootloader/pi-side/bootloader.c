@@ -89,7 +89,8 @@ static void die(int code) {
  * ---
  * The main bootloader routine.
  */
-extern char __bss_start__; // For calculating size of notmain 
+extern char __bss_start__; // For calculating size of notmain. The code should just be stored in the text segment.
+                           // See linker file (memmap) for more info.
 
 void notmain(void) {
 	uart_init(); // This hooks into our UART implementation!
@@ -105,8 +106,8 @@ void notmain(void) {
   unsigned nBytes = get_uint();
   unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
   unsigned fileHash = get_uint();
-
-  if (nBytes >= 10000) die(TOO_BIG); // TODO: fix, ask dawson
+  
+  if ((unsigned)&__bss_start__ <= ARMBASE + nBytes) die(TOO_BIG);
 
   put_uint(SOH);
   put_uint(nBytesHash);

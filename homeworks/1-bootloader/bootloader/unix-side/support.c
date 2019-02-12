@@ -1,5 +1,6 @@
 /*
  * support.c: Support functions for simple-boot.c
+ * Garrick Fernandez (garrick)
  * ---
  * Exports two helper functions, one for reading in a file to a buffer and 
  * another for opening a connection to the rpi.

@@ -1,39 +1,25 @@
-CC= arm-none-eabi-gcc
-CFLAGS = -I$(LIBPI)/.. -I. -Wall -Og -nostdlib -nostartfiles -ffreestanding 
-
-#LIBPI = libpi.small
-
-SRC = bootloader.c 
+# Makefile using libpi path, my-uart and my-gpio.c impl. Cited from newsgroup
+CC = arm-none-eabi-gcc
+CFLAGS = -I$(LIBPI_PATH) -I. -Wall -Og -nostdlib -nostartfiles -ffreestanding
+SRC = bootloader.c my-uart.c my-gpio.c
 OBJS = $(SRC:.c=.o)
 
-# Added path to main/base libpi. All changes should be made there!
-ifndef LIBPI_PATH
-$(error LIBPI_PATH is not set: this should contain the absolute path to where this directory is.  Define it in your shell's initialiation.  For example, .tcshrc for tcsh or .bashrc for bash)
-endif
+all: kernel.img
 
-LIBPI = LIBPI_PATH
-
-# useful set of defines.
-include $(LIBPI_PATH)/includes.mk
-# End my addins ##################
-
-all : kernel.img
-
-start.o : start.s
+start.o: start.s
 	arm-none-eabi-as start.s -o start.o
 
-kernel.img : memmap start.o $(OBJS)
-#	make -C libpi.small
-#	arm-none-eabi-ld start.o $(OBJS) libpi.small/libpi.a -T memmap -o bootloader.elf
+kernel.img: memmap start.o $(OBJS)
+	make -C $(LIBPI_PATH)
 	arm-none-eabi-ld start.o $(OBJS) $(LIBPI_PATH)/libpi.a -T memmap -o bootloader.elf
 	arm-none-eabi-objdump -D bootloader.elf > bootloader.list
 	arm-none-eabi-objcopy bootloader.elf -O binary kernel.img
 
-clean :
+clean:
 	rm -f *.o *.bin *.elf *.list *.img *~ Makefile.bak
 	make -C libpi.small clean
 
 depend:
 	makedepend -I$(LIBPI)/.. *.[ch] 
 
-# DO NOT DELETE
+# DO NOT DELETE 

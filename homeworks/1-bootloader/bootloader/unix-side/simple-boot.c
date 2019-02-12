@@ -100,7 +100,7 @@ void expect(const char *msg, int fd, unsigned v) {
  *   4) Wait for ACK from rpi, end
  * Reads and writes are done using put_uint() and get_uint().
  */
-void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
+void simple_boot(int fd, const unsigned char * buf, unsigned n) {
   put_uint(fd, SOH);
   put_uint(fd, n); // nBytes
   unsigned fileHash = crc32(buf, n);
