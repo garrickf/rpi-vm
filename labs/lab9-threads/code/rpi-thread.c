@@ -30,17 +30,22 @@ rpi_thread_t *rpi_fork(void (*code)(void *arg), void *arg) {
 	// stack offsets, change them!
 	enum { 
 		// register offsets are in terms of byte offsets!
-		LR_offset = 0,  
-		CPSR_offset = 4/4,
-		R0_offset = 8/4, 
-		R1_offset = 12/4, 
+		LR_offset = 52/4,  
+		CPSR_offset = 56/4,
+		R0_offset = 0/4, 
+		R1_offset = 4/4, 
 	};
 
-	// write this so that it calls code,arg.
+	// write this so that it calls code, arg.
 	void rpi_init_trampoline(void);
 
 	// do the brain-surgery on the new thread stack here.
-	unimplemented();
+	t->sp = &t->stack[1024 * 8 - 1]; // Goto end of stack
+	t->sp -= 60/4;
+	t->sp[LR_offset] = rpi_init_trampoline; // Literally branch here at end
+	t->sp[CPSR_offset] = rpi_get_cpsr();
+	t->sp[R0_offset] = arg;
+	t->sp[R1_offset] = code;
 
 	Q_append(&runq, t);
 	return t;
@@ -57,7 +62,15 @@ void rpi_exit(int exitcode) {
 	 * 3. otherwise we are done, switch to the scheduler thread 
 	 * so we call back into the client code.
 	 */
-	unimplemented();
+	printk("exit: reached\n");
+
+	rpi_thread_t *t;
+	Q_append(&freeq, cur_thread);
+	if(!(t = Q_pop(&runq))) { // No more threads in to-runq, go to scheduler
+		rpi_cswitch(&cur_thread->sp, &scheduler_thread->sp);
+	} else { // Switch to another thread
+		rpi_cswitch(&cur_thread->sp, &t->sp);
+	}
 }
 
 // yield the current thread.
@@ -67,7 +80,12 @@ void rpi_yield(void) {
 	// otherwise: 
 	//	1. enqueue current thread to runq.
 	// 	2. context switch to the new thread.
-	unimplemented();
+	rpi_thread_t *t;
+	if(!(t = Q_pop(&runq))) { // No more threads in to-runq, return
+		return;
+	} else { // Switch to another thread
+		rpi_cswitch(&cur_thread->sp, &t->sp);
+	}
 }
 
 // starts the thread system: nothing runs before.
@@ -83,9 +101,11 @@ void rpi_thread_start(int preemptive_p) {
  	//	  <scheduler_thread>
 	scheduler_thread = mk_thread();
 
-	unimplemented();
-
-
+	if ((cur_thread = Q_pop(&runq))) {
+		printk("rpi_thread_start: context switch...\n");
+		rpi_cswitch(&scheduler_thread->sp, &cur_thread->sp);
+	}
+	// Note: rpi exit handles returning to us, the dummy thread
 	printk("THREAD: done with all threads, returning\n");
 }
 

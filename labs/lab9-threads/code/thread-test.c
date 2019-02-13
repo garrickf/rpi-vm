@@ -20,7 +20,9 @@ void part0(void) {
 	unsigned cpsr = rpi_get_cpsr();
 	printk("cpsr() = %x\n", cpsr);
 	// check that interrupts are disabled and that we are in kernel mode.
-	unimplemented();
+	printk("interrupts disabled (bit 7) should be 1: %x\n", ((cpsr & (1 << 7)) >> 7));
+	printk("mode (bit 0:4) should be supervisor, %x: %x\n", 0b10011, (cpsr & 0b11111));
+	// unimplemented();
 
 	// stack grows down.
 	unsigned u[128+1], *e = &u[127], n, *p;
@@ -56,7 +58,7 @@ void part1(void) {
 	printk("running part1\n");
 	// check that we can context switch to ourselves multiple
 	// times.
-	for(int i = 0; i < 100; i++) {
+	for(int i = 0; i < 5; i++) {
 		printk("%d: about to cswitch, addr of sp=%x\n", &t.sp);
 		unsigned r = rpi_cswitch(&t.sp, &t.sp);
 		printk("%d: returned=%x, sp=%x\n", i, r, t.sp);
@@ -83,7 +85,7 @@ static void thread_code(void *arg) {
 // check that we can fork/yield/exit and start the threads package.
 void part2(void) {
 	printk("running part2\n");
-	int n = 30;
+	int n = 30; // Originally 30
 	thread_sum = thread_count = 0;
 	for(int i = 0; i < n; i++) 
 		rpi_fork(thread_code, (void*)i);
@@ -96,6 +98,9 @@ void part2(void) {
 
 void notmain() {
         uart_init();
+        part0();
+        part1();
+        part2();
 
 #if 0
 	part0();
