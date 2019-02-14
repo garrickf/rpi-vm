@@ -46,6 +46,7 @@ rpi_cswitch:
 	@ 	| r14 (lr) | r12-r2 | r1 | r0 | cspr |
 	@ 	+----------+--------+----+----+------+
 	@	60        56       12    8    4      0
+	@   <-- increasing offset (bytes)
 	@
 	@ To do brain-surgery, go to the start of the stack, move down
 	@ the amount of space you know will be taken up (sp after), 
