@@ -30,18 +30,23 @@ rpi_thread_t *rpi_fork(void (*code)(void *arg), void *arg) {
 	// stack offsets, change them!
 	enum { 
 		// register offsets are in terms of byte offsets!
-		LR_offset = 52/4,  
-		CPSR_offset = 56/4,
-		R0_offset = 0/4, 
-		R1_offset = 4/4, 
+		LR_offset = 56/4,  
+		CPSR_offset = 0/4,
+		R0_offset = 4/4, 
+		R1_offset = 8/4, 
+		// Old offsets
+		// LR_offset = 52/4,  
+		// CPSR_offset = 56/4,
+		// R0_offset = 0/4, 
+		// R1_offset = 4/4, 
 	};
 
 	// write this so that it calls code, arg.
 	void rpi_init_trampoline(void);
 
 	// do the brain-surgery on the new thread stack here.
-	t->sp = &t->stack[1024 * 8 - 1]; // Goto end of stack
-	t->sp -= 60/4;
+	t->sp = &t->stack[1024 * 8 - 1]; // Goto end of stack (since it's decrementing)
+	t->sp -= 60/4; // Go to where we know the stuff will be pushed on
 	t->sp[LR_offset] = rpi_init_trampoline; // Literally branch here at end
 	t->sp[CPSR_offset] = rpi_get_cpsr();
 	t->sp[R0_offset] = arg;

@@ -94,12 +94,13 @@ void part2(void) {
 	// no more threads: check.
 	printk("count = %d, sum=%d\n", thread_count, thread_sum);
 	assert(thread_count == n);
+	// expect triangle sum to be n (n - 1) / 2
 }
 
 void notmain() {
         uart_init();
-        part0();
-        part1();
+        // part0();
+        // part1();
         part2();
 
 #if 0
