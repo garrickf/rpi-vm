@@ -383,16 +383,16 @@ Disassembly of section .text:
 
 Disassembly of section .bss:
 
-00000000 <buf.3864>:
+00000000 <buf.3870>:
 	...
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3822>:
+00000000 <__FUNCTION__.3828>:
    0:	74696d65 	strbtvc	r6, [r9], #-3429	; 0xd65
    4:	00000000 	andeq	r0, r0, r0
 
-00000008 <__FUNCTION__.3837>:
+00000008 <__FUNCTION__.3843>:
    8:	705f6176 	subsvc	r6, pc, r6, ror r1	; <UNPREDICTABLE>
    c:	746e6972 	strbtvc	r6, [lr], #-2418	; 0x972
   10:	0000006b 	andeq	r0, r0, fp, rrx
@@ -550,7 +550,7 @@ Disassembly of section .text:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3773>:
+00000000 <__FUNCTION__.3779>:
    0:	5f697072 	svcpl	0x00697072
    4:	6f626572 	svcvs	0x00626572
    8:	0000746f 	andeq	r7, r0, pc, ror #8
@@ -758,11 +758,45 @@ Disassembly of section .text:
   dc:	1afffffa 	bne	cc <memcpy+0x4c>
   e0:	e12fff1e 	bx	lr
 
-000000e4 <dev_barrier>:
-  e4:	e92d4008 	push	{r3, lr}
-  e8:	ebfffffe 	bl	0 <dmb>
-  ec:	ebfffffe 	bl	0 <dsb>
-  f0:	e8bd8008 	pop	{r3, pc}
+000000e4 <strcmp>:
+  e4:	e5d03000 	ldrb	r3, [r0]
+  e8:	e3530000 	cmp	r3, #0
+  ec:	0a00000b 	beq	120 <strcmp+0x3c>
+  f0:	e5d12000 	ldrb	r2, [r1]
+  f4:	e1520003 	cmp	r2, r3
+  f8:	1a000008 	bne	120 <strcmp+0x3c>
+  fc:	e2812001 	add	r2, r1, #1
+ 100:	e1a01002 	mov	r1, r2
+ 104:	e5f03001 	ldrb	r3, [r0, #1]!
+ 108:	e3530000 	cmp	r3, #0
+ 10c:	0a000003 	beq	120 <strcmp+0x3c>
+ 110:	e2822001 	add	r2, r2, #1
+ 114:	e5d1c000 	ldrb	ip, [r1]
+ 118:	e15c0003 	cmp	ip, r3
+ 11c:	0afffff7 	beq	100 <strcmp+0x1c>
+ 120:	e5d10000 	ldrb	r0, [r1]
+ 124:	e0600003 	rsb	r0, r0, r3
+ 128:	e12fff1e 	bx	lr
+
+0000012c <strncmp>:
+ 12c:	e0802002 	add	r2, r0, r2
+ 130:	ea000005 	b	14c <strncmp+0x20>
+ 134:	e4d0c001 	ldrb	ip, [r0], #1
+ 138:	e4d13001 	ldrb	r3, [r1], #1
+ 13c:	e15c0003 	cmp	ip, r3
+ 140:	0a000001 	beq	14c <strncmp+0x20>
+ 144:	e063000c 	rsb	r0, r3, ip
+ 148:	e12fff1e 	bx	lr
+ 14c:	e1500002 	cmp	r0, r2
+ 150:	1afffff7 	bne	134 <strncmp+0x8>
+ 154:	e3a00000 	mov	r0, #0
+ 158:	e12fff1e 	bx	lr
+
+0000015c <dev_barrier>:
+ 15c:	e92d4008 	push	{r3, lr}
+ 160:	ebfffffe 	bl	0 <dmb>
+ 164:	ebfffffe 	bl	0 <dsb>
+ 168:	e8bd8008 	pop	{r3, pc}
 
 Disassembly of section .comment:
 
@@ -1290,17 +1324,17 @@ Disassembly of section .text:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3790>:
+00000000 <__FUNCTION__.3796>:
    0:	5f6d7770 	svcpl	0x006d7770
    4:	706d6f63 	rsbvc	r6, sp, r3, ror #30
    8:	00657475 	rsbeq	r7, r5, r5, ror r4
 
-0000000c <__FUNCTION__.3782>:
+0000000c <__FUNCTION__.3788>:
    c:	5f746e69 	svcpl	0x00746e69
   10:	656e696c 	strbvs	r6, [lr, #-2412]!	; 0x96c
   14:	00000000 	andeq	r0, r0, r0
 
-00000018 <__FUNCTION__.3797>:
+00000018 <__FUNCTION__.3803>:
   18:	5f6d7770 	svcpl	0x006d7770
   1c:	6e697270 	mcrvs	2, 3, r7, cr9, cr0, {3}
   20:	00000074 	andeq	r0, r0, r4, ror r0
@@ -1461,6 +1495,9 @@ Disassembly of section .text:
 00000038 <dummy>:
   38:	e12fff1e 	bx	lr
 
+0000003c <BRANCHTO>:
+  3c:	e12fff10 	bx	r0
+
 Disassembly of section .ARM.attributes:
 
 00000000 <.ARM.attributes>:
@@ -1468,7 +1505,7 @@ Disassembly of section .ARM.attributes:
    4:	61656100 	cmnvs	r5, r0, lsl #2
    8:	01006962 	tsteq	r0, r2, ror #18
    c:	00000012 	andeq	r0, r0, r2, lsl r0
-  10:	4b5a3605 	blmi	168d82c <dummy+0x168d7f4>
+  10:	4b5a3605 	blmi	168d82c <BRANCHTO+0x168d7f0>
   14:	08070600 	stmdaeq	r7, {r9, sl}
   18:	44010901 	strmi	r0, [r1], #-2305	; 0x901
   1c:	Address 0x000000000000001c is out of bounds.

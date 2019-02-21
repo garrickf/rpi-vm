@@ -73,7 +73,7 @@ static void (expect_val)(int fd, unsigned v, const char *s) {
 static void print_args(const char *msg, char *argv[], int nargs) {
 	note("%s: prog=<%s> ", msg, argv[0]);
 	for(int i = 1; i < nargs; i++)
-		printf("<%s> ", argv[i]);
+		printf("%d: <%s> ", i, argv[i]);
 	printf("\n");
 }
 
@@ -91,11 +91,20 @@ static int is_pi_prog(char *prog) {
 /***********************************************************************
  * implement the rest.
  */
-
 // catch control c: set done=1 when happens.  
 static sig_atomic_t done = 0;
+
+static void int_handler(int sig) {
+	done = 1;
+}
+
 static void catch_control_c(void) {
-	unimplemented();
+	struct sigaction new_action;
+	new_action.sa_handler = int_handler;
+	sigemptyset(&new_action.sa_mask);
+	new_action.sa_flags = 0;
+
+	sigaction (SIGINT, &new_action, NULL);
 }
 
 
@@ -112,20 +121,71 @@ static void send_prog(int fd, const char *name) {
         unsigned *code = (void*)read_file(&nbytes, name);
 	assert(nbytes%4==0);
 
-	expect_val(fd, ACK);
-	printf("got ACK\n");
+	pi_put(fd, "run \n");
+	// expect_val(fd, ACK);
+	// printf("got ACK\n");
+	expect("init: receive acknowlegement of transmission", fd, ACK);
 
-	unimplemented();
+	// version: stored by linker
+    put_uint(fd, code[0]);
+    // address: stored by linker.
+    put_uint(fd, code[1]);
+    put_uint(fd, nbytes);
+    put_uint(fd, crc32(code, nbytes));
+    expect("metadata: receive acknowlegement of transmission", fd, ACK);
+
+	// Send buffer over, 4 bytes at a time
+	for (unsigned i = 0; i < nbytes / 4; i++) {
+		put_uint(fd, code[i]);
+		// printf("send_prog: sending %u\n", *chunk); // DEBUG
+	}
+	put_uint(fd, EOT); // End-of-transmission
+	expect("data: receive acknowlegement of transmission", fd, ACK);
+
+	// TODO: echo all things sent back (echo in my-install?)
+	echo_until(fd, cmd_done);
 }
 
 // ship pi program to the pi.
 static int run_pi_prog(int pi_fd, char *argv[], int nargs) {
-	unimplemented();
+	char *program = argv[0];
+	if (!is_pi_prog(program)) return 0;
+
+	printf("%s\n", "is a pi program");
+	send_prog(pi_fd, program);
 }
 
 // run a builtin: reboot, echo, cd
 static int do_builtin_cmd(int pi_fd, char *argv[], int nargs) {
-	unimplemented();
+	print_args("args", argv, nargs); // DEBUG
+	char *command = argv[0];
+	// printf("%s\n", command);
+	if (strcmp(command, "echo") == 0) { // Echo builtin
+		int sz = 0;
+		for (int i = 0; i < nargs - 1; i++) {
+			pi_put(pi_fd, argv[i]);
+			pi_put(pi_fd, " ");
+			sz += strlen(argv[i]) + 1; // include space
+		}
+		pi_put(pi_fd, argv[nargs - 1]);
+		pi_put(pi_fd, "\n");
+		sz += strlen(argv[nargs - 1]) + 1; // include newline
+
+		char ret[sz];
+		pi_readline(pi_fd, ret, sz); // TODO: perhap trim off "echo" on piside
+		printf("pi echoed: <%s>\n", ret);
+	} else if (strcmp(command, "reset") == 0) { // Reset builtin
+		pi_put(pi_fd, command);
+		pi_put(pi_fd, "\n");
+		char ret[strlen(pi_done)];
+		pi_readline(pi_fd, ret, strlen(pi_done));
+		assert(strncmp(ret, pi_done, strlen(ret)) == 0); // Don't compare the newline
+		printf("pi rebooted. shell done.\n");
+		exit(0);
+	} else {
+		return 0;
+	}
+	return 1;
 }
 
 /*
@@ -168,7 +228,14 @@ static int shell(int pi_fd, int unix_fd) {
 
 	if(done) {
 		printf("\ngot control-c: going to shutdown pi.\n");
-		unimplemented();
+		char *command = "reset";
+		pi_put(pi_fd, command);
+		pi_put(pi_fd, "\n");
+		char ret[strlen(pi_done)];
+		pi_readline(pi_fd, ret, strlen(pi_done));
+		assert(strncmp(ret, pi_done, strlen(ret)) == 0); // Don't compare the newline
+		printf("pi rebooted. shell done.\n");
+		exit(0);
 	}
 	return 0;
 }

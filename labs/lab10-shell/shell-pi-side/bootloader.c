@@ -44,12 +44,34 @@ int load_code(void) {
 	put_uint(ACK);
 
 	// bootloader code.
- 	unimplemented();
+ 	// Wait for reply
+ 	unsigned version = get_uint();
+ 	addr = get_uint();
+	unsigned nBytes = get_uint();
+	// unsigned nBytesHash = crc32(&nBytes, sizeof(unsigned));
+	unsigned fileHash = get_uint();
 
-        put_uint(ACK);
+	// Sanity check (address and size)
+	if (version != 2) die(NAK);
+	if (addr < LAST_USED_ADDRESSES) die(BAD_START);
+	if (addr + nBytes >= MAX_ADDRESS) die(TOO_BIG);
+	put_uint(ACK); // Send ACK (acknowledgement)
 
-        // give time to flush out; ugly.   implement `uart_flush()`
-	delay_ms(100);  
+	// Receive code
+	int i;
+	for (i = 0; i < nBytes / 4; i++) {
+		PUT32(addr + i * 4, get_uint()); // Copy starting at addr
+	}
+	// Assert end of transmission, otherwise bad end
+	if (get_uint() != EOT) die(BAD_END);
+	if (crc32((unsigned char *)addr, nBytes) == fileHash) put_uint(ACK);
+	else die(BAD_CKSUM); // Bad checksum
+
+	// give time to flush out; ugly. XXX: implement `uart_flush()`
+	delay_ms(100);
 
 	/* return address */
+	BRANCHTO(addr + sizeof(unsigned) * 2); // Set up so we link back (loader start)
+
+	return 0;
 }

@@ -24,4 +24,8 @@ int tokenize(char **argv, int max_args, char *buf);
 
 unsigned crc32(const void *buf, unsigned size);
 
+// Symlinked from bootloader and forward declared
+unsigned get_uint(int fd);
+void put_uint(int fd, unsigned u);
+
 #endif

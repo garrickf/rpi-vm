@@ -40,7 +40,7 @@ static unsigned char get_byte(int fd) {
 // we do with |= to force get_byte to get called in the right order 
 // 	  (get_byte(fd) | get_byte(fd) << 8 ...) 
 // isn't guaranteed to be called in that order b/c | is not a seq point.
-static unsigned get_uint(int fd) {
+unsigned get_uint(int fd) {
   unsigned u = get_byte(fd);
   u |= get_byte(fd) << 8;
   u |= get_byte(fd) << 16;

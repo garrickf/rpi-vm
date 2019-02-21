@@ -101,9 +101,9 @@ void notmain() {
         uart_init();
         // part0();
         // part1();
-        part2();
+        // part2();
 
-#if 0
+#if 1
 	part0();
 	part1();
 	for(int i = 0; i < 20; i++)
