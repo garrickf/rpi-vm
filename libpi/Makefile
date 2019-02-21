@@ -29,8 +29,6 @@ SRC = 	cs140e-printf.c  	\
 	cs140e-put-get.s
 #	my-uart.c # New file
 
-=======
-
 TARGET = libpi.a
 
 # defines CC, etc.

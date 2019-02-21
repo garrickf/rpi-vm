@@ -3629,3 +3629,24 @@ Disassembly of section .ARM.attributes:
   24:	1e011a01 	vmlane.f32	s2, s2, s2
   28:	Address 0x0000000000000028 is out of bounds.
 
+
+cs140e-asm.o:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <BRANCHTO>:
+   0:	e12fff10 	bx	r0
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00001c41 	andeq	r1, r0, r1, asr #24
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000012 	andeq	r0, r0, r2, lsl r0
+  10:	4b5a3605 	blmi	168d82c <BRANCHTO+0x168d82c>
+  14:	08070600 	stmdaeq	r7, {r9, sl}
+  18:	44010901 	strmi	r0, [r1], #-2305	; 0x901
+  1c:	Address 0x000000000000001c is out of bounds.
+

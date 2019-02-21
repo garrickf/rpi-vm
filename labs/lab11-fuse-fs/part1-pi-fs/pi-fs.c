@@ -37,7 +37,7 @@ static dirent_t root[] = {
 
 static int pi_open(const char *path, struct fuse_file_info *fi) {
     note("opening\n");
-    unimplemented();
+    // unimplemented();
 }
 
 static int pi_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
@@ -49,7 +49,13 @@ static int pi_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // no sub-directories
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
-    unimplemented();
+    int i = 0;
+    while (1) {
+        dirent_t dir = root[i];
+        if (dir.name == NULL) break;
+        filler(buf, dir.name + 1, NULL, 0); // Gets rid of slash
+        i++;
+    }
     return 0;
 }
 
@@ -67,7 +73,9 @@ static int pi_getattr(const char *path, struct stat *stbuf) {
     dirent_t *e = ent_lookup(root, path);
     if(!e)
         return -ENOENT;
-    unimplemented();
+    stbuf->st_mode = S_IFREG | 0444;
+    stbuf->st_nlink = 1;
+    stbuf->st_size = e->f->n_alloc; // See pi-fs.h, grab the file's allocated size
     return 0;
 }
 
@@ -80,19 +88,19 @@ static int pi_read(const char *path, char *buf, size_t size,
     if(!e)
         return retv;
 
-    unimplemented();
+    // unimplemented();
     return size;
 }
 
 static int pi_write(const char *path, const char *buf, size_t size, 
         off_t offset, struct fuse_file_info *fi) {
 
-    note("****** WRITE:<%s> off=%ld, size=%ld\n", path,offset,size);
+    note("****** WRITE:<%s> off=%lld, size=%ld\n", path,offset,size);
     int retv;
     dirent_t *e = file_lookup(&retv, root, path, perm_wr);
     if(!e)
         return retv;
-    unimplemented();
+    // unimplemented();
     return size;
 }
 
@@ -103,7 +111,7 @@ static int pi_truncate(const char *path, off_t length) {
     if(!e)
         return retv;
     
-    unimplemented();
+    // unimplemented();
     return 0;
 }
 
