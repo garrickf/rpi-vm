@@ -1,23 +1,14 @@
 # makefile based on scott mcpeak's grad school page :)
 # 	http://scottmcpeak.com/autodepend/autodepend.html
 
-NAME= hello
-WHERE=./fuse-hello
-
-OBJS = $(NAME).o 
-
-FUSE_CMD = ./$(NAME) -f -d -s $(WHERE)
+NAME= pi-fs
+WHERE=./fake-pi
+OBJS = $(NAME).o  pi-fs-support.o
 
 CC = gcc
-CFLAGS = -O -Wall -g -std=gnu99 -D_FILE_OFFSET_BITS=64   -Wno-unused-function -Werror  `pkg-config fuse --cflags --libs`
+CFLAGS = -O -Wall -g -std=gnu99 -D_FILE_OFFSET_BITS=64   -Wno-unused-function -Werror
 
-all: $(NAME) 
-
-
-run:
-	cat $(WHERE)/hello
-	sleep 1
-	cat $(WHERE)/hello
+all: $(NAME) # test-redirect fuse-redirect # run
 
 mount: 
 	mkdir -p $(WHERE)
@@ -26,8 +17,25 @@ mount:
 unmount:
 	fusermount -uz $(WHERE)
 
+test:
+	@ echo "----------start------------------------------"
+	echo 1 > $(WHERE)/echo.cmd
+	@ echo "----------2---------------------------------"
+	echo 2 >> $(WHERE)/echo.cmd
+	@ echo "----------3---------------------------------"
+	echo "hello this is our test" >> $(WHERE)/echo.cmd
+	@ echo "----------4---------------------------------"
+	cat $(WHERE)/console
+	@ echo "----------5---------------------------------"
+	cat $(WHERE)/echo.cmd
+	@ echo "----------dev.dir---------------------------------"
+	ls -R $(WHERE)
+
+	echo 1 > $(WHERE)/reboot.cmd
+
 $(NAME):  $(OBJS) 
 	$(CC) $(CFLAGS) $^  -o $@ -lm -lfuse
+    
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
@@ -53,4 +61,4 @@ ctags:
 	ctags *.[ch]
 # remove compilation products
 clean:
-	rm -f $(NAME) *.o *.d Makefile.bak *~ *.bin tags 
+	rm -f $(NAME) *.o *.d Makefile.bak *~ *.bin tags
