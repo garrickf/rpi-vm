@@ -9,10 +9,15 @@ OBJS = $(NAME).o
 FUSE_CMD = ./$(NAME) -f -d -s $(WHERE)
 
 CC = gcc
-CFLAGS = -O -Wall -g -std=gnu99 -D_FILE_OFFSET_BITS=64   -Wno-unused-function -Werror  `pkg-config fuse --cflags --libs`
+CFLAGS = -O -Wall -g -std=gnu99 -D_FILE_OFFSET_BITS=64   -Wno-unused-function     `pkg-config fuse --cflags --libs`
 
-all: $(NAME) 
+all: check_os $(NAME) 
 
+check_os:
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+        LINUX_LIBS=-lfuse
+endif
 
 run:
 	cat $(WHERE)/hello
@@ -27,7 +32,8 @@ unmount:
 	fusermount -uz $(WHERE)
 
 $(NAME):  $(OBJS) 
-	$(CC) $(CFLAGS) $^  -o $@ -lm -lfuse
+	$(CC) $(CFLAGS) $^ `pkg-config fuse --cflags --libs`  -o $@ -lm  $(LINUX_LIBS)
+
 
 # pull in dependency info for *existing* .o files
 -include $(OBJS:.o=.d)
