@@ -165,9 +165,7 @@ struct cache_size {
 };
 
 // implemement this.
-static struct cache_size get_size(unsigned u) {
-    unimplemented();
-
+static struct cache_size get_size(unsigned u) { // This was implemented for us
     struct cache_size s;
 
     // b6-15
@@ -441,6 +439,70 @@ fld_t *mmu_init(unsigned base) {
     return pt;
 }
 
+// My function, lifted from part 1 code
+void part0_tests(void) {
+    printk("******** part 0 tests! ************\n");
+    unsigned base = 0x100000;
+
+    fld_t *pt = mmu_init(base);
+
+    // only mapping a single section: do more.
+    // Maps vm section (1mb) -> pm section
+    // Other two map GPIO ranges
+    // Any other access will be a crash
+    // Changed to our
+    our_mmu_map_section(pt, 0x0, 0x0);
+    our_mmu_map_section(pt, 0x20000000, 0x20000000);
+    our_mmu_map_section(pt, 0x20200000, 0x20200000);
+
+    // this should be wrapped up neater.  broken down so can replace 
+    // one by one.
+
+    struct control_reg1 c1 = read_control_reg1();
+    c1.XP_pt = 1;
+    write_control_reg1(c1);
+    c1 = read_control_reg1();
+    assert(c1.XP_pt);
+    assert(!c1.MMU_enabled);
+
+    our_write_domain_access_ctrl(~0UL);
+    dsb();
+
+    // use the sequence on B2-25
+    our_set_procid_ttbr0(1, pt);
+
+    // have to flush I/D cache and TLB, BTB, prefetch buffer.
+    c1.MMU_enabled = 1;
+    our_mmu_enable(c1);
+    
+    // mmu_enable(c1, pt);
+
+    // VM ON!
+    c1 = read_control_reg1();
+    assert(c1.MMU_enabled); // Testing if VM was turned on
+
+    int test1 = *((int *)base); // Test deref of unmapped region
+    printk("%d\n", test1);
+    
+    int x = 5, v0, v1;
+    v0 = get32(&x);
+    printk("doing print with vm ON\n");
+    x++;
+    v1 = get32(&x);
+
+    // turn off.
+    c1.MMU_enabled = 0;
+    our_mmu_disable(c1);
+
+    c1 = read_control_reg1();
+    assert(!c1.MMU_enabled);
+    printk("OFF\n");
+
+    // our reads worked.
+    assert(v0 == 5);
+    assert(v1 == 6);
+    printk("******** success ************\n");
+}
 
 void part1(void) {
     printk("******** part 1! ************\n");
@@ -506,7 +568,8 @@ void part1(void) {
 void notmain() {
     uart_init();
     printk("implement one at a time.\n");
-    part1();
+    // part0(); // TODO: try other parts
+    part0_tests();
     clean_reboot();
 
     // move about reboot and implement

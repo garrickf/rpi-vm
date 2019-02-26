@@ -72,5 +72,6 @@
 
 .globl get_cache_type
 get_cache_type:
-    @@@@  implement @@@@ 
+    @@@@  implement @@@@
+    mrc p15, 0, r0, c0, c0, 1 
     bx lr
