@@ -51,15 +51,16 @@
   self-contained implementation of pi interrupts (for timer-interrupts),
   kicking each line until you understand what, how, why.  You will
   use these to then implement a version of `gprof` (Unix statistical
-  profiler) in about 30 lines.<br></br> 
-  Perhaps the thing I love most
-  about this course is that because we write all the code ourselves, we
-  aren't constantly fighting some large, lumbering OS that can't get out
-  of its own way.  As a result, simple ideas only require simple code.
-  This lab is a great example: a simple idea, about twenty minutes of
-  code, an interesting result.  If we did on Unix could spend weeks or
-  more fighting various corner cases and have a result that is much much
-  much slower and, worse, in terms of insight.
+  profiler) in about 30 lines.
+
+     Perhaps the thing I love most about this course is that because we
+  write all the code ourselves, we aren't constantly fighting some
+  large, lumbering OS that can't get out of its own way.  As a result,
+  simple ideas only require simple code.  This lab is a great example:
+  a simple idea, about twenty minutes of code, an interesting result.
+  If we did on Unix could spend weeks or more fighting various corner
+  cases and have a result that is much much much slower and, worse,
+  in terms of insight.
 
   8. [lab8-sonar-int](lab8-sonar-int/): we take a bit of a fun break,
   and bang out a quick device driver for a simple sonar device. You
@@ -71,6 +72,8 @@
   threads package.  You will write the code for non-preemptive and
   preemptive context switching.  Most people don't understand such things
   so, once again, you'll leave lab knowing something many do not.
+
+### Packaging up the pi: Shells, file systems, more.
 
   10. [lab10-shell](lab10-shell/): You'll write a simple shell that runs 
   on Unix and can:
@@ -88,6 +91,19 @@
       tricks) --- we're at the point in the quarter where you start to get
       some nice technological velocity because of how much you've done.
 
+  10. [lab11-fuse-fs](lab11-fuse-fs/): while building a shell is
+  illuminating, you'd like to have the pi more integrated into your
+  computing, versus having to use a special-purpose interface to talk
+  to it.  In this lab you will use the FUSE file system to wrap up your
+  pi as a special file system and mount it on your laptop, where you can
+  use standard utilities (and your normal shell) to interact with it.
+  Writes to special files (`/pi/reboot`, `/pi/run`) will take the place
+  of built-in shell commands.  
+
+      This lab is a great example of the power of Unix's simple, powerful
+  OO-interface that lets you package a variety of disparete things as
+  files, directories, links and interact with them using a uniform set
+  of verbs (e.g., `open()-read()-write()-close()`).
 
 ### Binary code:
 
