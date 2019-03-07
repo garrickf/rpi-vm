@@ -420,13 +420,29 @@ void mmu_map_section(fld_t *pt, unsigned va, unsigned pa) {
     assert(is_aligned(pa, 20));
 
     // set to the right index in pt.
-    fld_t *pte = 0;
+    fld_t *pte = pt + (va >> 20);
+    // memset(pte, 0, sizeof pte);
+    // added: if the pte's tag is not 0b00, abort
+    if (pte->tag != 0b00) return;
 
-    unimplemented();
-
-    fld_print(pte);
+    pte->tag = 0b10; // See graph on lab readme
+    // B and C are 0; strongly ordered
+    // XN is 0 (executable)
+    pte->domain = 0b11; // manager
+    pte->AP = 0b11;
+    pte->sec_base_addr = (pa >> 20); // Map the virtual address
+    
+    fld_print(pte); // Check off: force crash
+    // pte->tag = 0; // Tag to 0 causes hang
+    // pte->sec_base_addr = 0;
     printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
 }
+
+/* My function: set_procid_ttbr0
+ *
+ * 
+ */
+
 
 // would want to initialize everything.
 fld_t *mmu_init(unsigned base) {
@@ -455,6 +471,11 @@ void part0_tests(void) {
     our_mmu_map_section(pt, 0x20000000, 0x20000000);
     our_mmu_map_section(pt, 0x20200000, 0x20200000);
 
+    // Work for q2 of part 0
+    unsigned test_vm_section = base;
+    unsigned test_pm_section = base + base;
+    our_mmu_map_section(pt, test_vm_section, test_pm_section);
+
     // this should be wrapped up neater.  broken down so can replace 
     // one by one.
 
@@ -469,7 +490,7 @@ void part0_tests(void) {
     dsb();
 
     // use the sequence on B2-25
-    our_set_procid_ttbr0(1, pt);
+    our_set_procid_ttbr0(1, pt); // This puts it in the TLB
 
     // have to flush I/D cache and TLB, BTB, prefetch buffer.
     c1.MMU_enabled = 1;
@@ -481,26 +502,32 @@ void part0_tests(void) {
     c1 = read_control_reg1();
     assert(c1.MMU_enabled); // Testing if VM was turned on
 
-    int test1 = *((int *)base); // Test deref of unmapped region
+    // ******* TEST 1 **********
+    int test1 = *((int *)base - 4); // Test deref of unmapped region, remove the "- 4" to go straight to the boundary
+    // behaviour: it will hang
     printk("%d\n", test1);
+
+    // ******* TEST 2 **********
+    int test2 = *((int *)test_vm_section);
+    printk("%d\n", test2);
     
-    int x = 5, v0, v1;
-    v0 = get32(&x);
-    printk("doing print with vm ON\n");
-    x++;
-    v1 = get32(&x);
+    // int x = 5, v0, v1;
+    // v0 = get32(&x);
+    // printk("doing print with vm ON\n");
+    // x++;
+    // v1 = get32(&x);
 
-    // turn off.
-    c1.MMU_enabled = 0;
-    our_mmu_disable(c1);
+    // // turn off.
+    // c1.MMU_enabled = 0;
+    // our_mmu_disable(c1);
 
-    c1 = read_control_reg1();
-    assert(!c1.MMU_enabled);
-    printk("OFF\n");
+    // c1 = read_control_reg1();
+    // assert(!c1.MMU_enabled);
+    // printk("OFF\n");
 
-    // our reads worked.
-    assert(v0 == 5);
-    assert(v1 == 6);
+    // // our reads worked.
+    // assert(v0 == 5);
+    // assert(v1 == 6);
     printk("******** success ************\n");
 }
 
@@ -511,9 +538,10 @@ void part1(void) {
     fld_t *pt = our_mmu_init(base);
 
     // only mapping a single section: do more.
-    our_mmu_map_section(pt, 0x0, 0x0);
-    our_mmu_map_section(pt, 0x20000000, 0x20000000);
-    our_mmu_map_section(pt, 0x20200000, 0x20200000);
+    mmu_map_section(pt, 0x0, 0x0);
+    mmu_map_section(pt, 0x20000000, 0x20000000);
+    mmu_map_section(pt, 0x20200000, 0x20200000);
+    printk("done mapping\n");
 
     // this should be wrapped up neater.  broken down so can replace 
     // one by one.
@@ -525,21 +553,29 @@ void part1(void) {
     assert(c1.XP_pt);
     assert(!c1.MMU_enabled);
 
-    our_write_domain_access_ctrl(~0UL);
+    //our_write_domain_access_ctrl(~0UL);
+    write_domain_access_ctrl(~0UL);
     dsb();
 
     // use the sequence on B2-25
-    our_set_procid_ttbr0(1, pt);
+    // our_set_procid_ttbr0(1, pt);
+    set_procid_ttbr0(1, pt);
 
     // have to flush I/D cache and TLB, BTB, prefetch buffer.
     c1.MMU_enabled = 1;
-    our_mmu_enable(c1);
+    // our_mmu_enable(c1);
+    mmu_enable(c1);
     
     // mmu_enable(c1, pt);
 
     // VM ON!
     c1 = read_control_reg1();
     assert(c1.MMU_enabled);
+
+    // ******* TEST 1 **********
+    int test1 = *((int *)base - 4); // Test deref of unmapped region, remove the "- 4" to go straight to the boundary
+    // behaviour: it will hang
+    printk("%d\n", test1);
 
     int x = 5, v0, v1;
     v0 = get32(&x);
@@ -549,7 +585,8 @@ void part1(void) {
 
     // turn off.
     c1.MMU_enabled = 0;
-    our_mmu_disable(c1);
+    // our_mmu_disable(c1);
+    mmu_disable(c1);
 
     c1 = read_control_reg1();
     assert(!c1.MMU_enabled);
@@ -568,8 +605,9 @@ void part1(void) {
 void notmain() {
     uart_init();
     printk("implement one at a time.\n");
-    // part0(); // TODO: try other parts
-    part0_tests();
+    // part0(); // TODO: try other parts // 3 from part 0
+    // part0_tests(); // 1 and 2 from part 0
+    part1();
     clean_reboot();
 
     // move about reboot and implement

@@ -75,3 +75,86 @@ get_cache_type:
     @@@@  implement @@@@
     mrc p15, 0, r0, c0, c0, 1 
     bx lr
+
+@ B6-21 tells us the c-numbers we must use
+@ Write to a 2-bit field in the domain access control register
+.globl write_domain_access_ctrl
+write_domain_access_ctrl:
+    mcr p15, 0, r0, c3, c0, 0   @ Write domain access cntl register
+    mov r1, #0
+    DSB(r1)                     @ ARM manual B2-24: Any write to cp15 requires a prefetch flush
+    PREFETCH_FLUSH(r1)
+    bx lr
+
+@ B2-25 has the cookbook
+@ Change ASID to 0
+@ PrefetchFlush
+@ Change Translation Table Base Register 
+@ PrefetchFlush
+@ Change ASID to new value
+@ Line number for setting ASID: B4-52
+.globl set_procid_ttbr0
+set_procid_ttbr0:
+    CLR(r2)
+    SET_ASID(r2)        @ Given procid, set its ASID to 0 first
+    PREFETCH_FLUSH(r2)
+
+    SET_TTBR0(r1)               @ B4-41: set translation table base to our pointer
+    SET_TTBR1(r2)               @ Set TTBR1 to 0
+    mcr p15, 0, r2, c2, c0, 2   @ Set TTBRC to 0
+    
+    PREFETCH_FLUSH(r2)
+
+    SET_ASID(r0) 
+
+    @ BTB is the Branch Target Buffer
+    @ Note: might not have to do this, see last paragraph in B2-25
+    DSB(r2)                     @ B2-25 Must invalidate BTB after changes to TTB
+    FLUSH_BTB(r2)
+    DSB(r2)
+    PREFETCH_FLUSH(r2)          @ B2-24 Must do a prefetch flush after invalidating BTB
+
+    bx lr
+
+
+.globl mmu_enable
+mmu_enable:
+    CLR(r1)
+                        @ Disable instruction cache (???)
+    INV_ICACHE(r1)      @ Invalidate the instruction cache
+    DSB(r1)
+    FLUSH_BTB(r1)
+    DSB(r1)
+
+    @ mrc p15, 0, r2, c1, c0, 0 @ Write domain access cntl register
+    @ mov r3, #1
+    @ orr r2, r3                @ Or in 1, for M (zeroth) bit 
+    mcr p15, 0, r0, c1, c0, 0   @ Enable the MMU by setting bit 0 in the CP15 Control Register (B4-40)
+    
+    INV_ITLB(r1)
+    INV_DTLB(r1)
+    INV_TLB(r1)                 @ 6-9 Should invalidate all TLB's 
+
+                                @ Reenable ins. cache (???)
+    DSB(r1)                     @ B2-25 Must invalidate BTB after enabling MMU (B2-24)
+    FLUSH_BTB(r1)
+    DSB(r1)
+    PREFETCH_FLUSH(r1)          @ B2-24 Must do a prefetch flush after invalidating BTB
+    DSB(r1)
+    bx lr
+
+@ 6-9 has the cookbook. 
+.globl mmu_disable
+mmu_disable:
+    CLR(r1)
+    INV_DCACHE(r1)              @ Ivalidate the data cache
+    DSB(r1)
+
+    mcr p15, 0, r0, c1, c0, 0   @ Disable the MMU by setting bit 0 in the CP15 Control Register (B4-40)
+
+    DSB(r1)                     @ B2-25 Must invalidate BTB after disabling MMU (B2-24)
+    FLUSH_BTB(r1)
+    DSB(r1)
+    PREFETCH_FLUSH(r1)          @ B2-24 Must do a prefetch flush after invalidating BTB
+    DSB(r1)
+    bx lr

@@ -81,7 +81,7 @@ void env_switch_to(env_t *e) {
  * your code
  */
 
-unsigned cpsr_read(void);
+unsigned cpsr_read(void); // Define in asm?
 
 unsigned cpsr_read_c(void) { 
     return cpsr_read() & 0b11111; 

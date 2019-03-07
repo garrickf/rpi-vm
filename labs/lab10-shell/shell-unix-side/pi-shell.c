@@ -110,7 +110,19 @@ static void catch_control_c(void) {
 
 // fork/exec/wait: use code from homework.
 static int do_unix_cmd(char *argv[], int nargs) {
-	unimplemented();
+	pid_t pid = fork();
+	if (pid == 0) {
+		execvp(argv[0], argv);
+		printf("Something went wrong.\n");
+		exit(1);
+	}
+	int status;
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status)) {
+		printf("Process exited normally.\n");
+	} else {
+		printf("Process terminated abnormally with exit code {}.\n");
+	}
 }
 
 
