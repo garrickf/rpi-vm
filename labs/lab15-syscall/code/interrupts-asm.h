@@ -10,7 +10,7 @@
 #define UNDEF_MODE      0b11011
 #define SYS_MODE         0b11111
 
-#define SYS_STACK_ADDR 0x100000
+#define SYS_STACK_ADDR 0x100000 // Why am I accessing this
 #define SWI_STACK_ADDR 0x200000
 // general interrupts.
 #define INT_STACK_ADDR 0x300000

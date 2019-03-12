@@ -115,6 +115,7 @@ fld_t *mmu_pt_alloc(unsigned sz) {
 
     // first-level page table is 4096 entries.
     fld_t *pt = kmalloc_aligned(4096 * 4, 1<<14);
+    printk("address %x", pt); // Test the address, where is it?
     AssertNow(sizeof *pt == 4);
     demand(is_aligned((unsigned)pt, 14), must be 14-bit aligned!);
     return pt;

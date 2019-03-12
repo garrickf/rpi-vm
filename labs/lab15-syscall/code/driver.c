@@ -137,6 +137,8 @@ void handle_swi(uint8_t sysno, uint32_t pc, uint32_t *saved_regs) {
 unsigned cpsr_read(void);
 int swi_asm1(int arg0, int arg1, int arg2, int arg3);
 void swi_setup_stack(unsigned stack_addr);
+int swi_asm2(int arg0, int arg1, int arg2, int arg3); // A new syscall appears!
+int swi_asm3();
 
 // don't modify this: it should run fine when everything works.
 void int_part0(void) {
@@ -167,8 +169,11 @@ void int_part1(void) {
 
     env_t *e = env_alloc();
 
-    // map the sections you need.
-    unimplemented();
+    // map the sections you need. (GF)
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain; // 0x0 is where our code is
+    mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR)->domain = e->domain; // SWI_STACK_ADDR is where the SWI stack is
+    mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR)->domain = e->domain;
 
     // gpio
     mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
@@ -187,6 +192,86 @@ void int_part1(void) {
     assert(cpsr_before == cpsr_read_c());
     assert(reg1_before == cp15_ctrl_reg1_rd_u32());
 
+    printk("\n **about to call swi2\n");
+    printk("swi_asm = %d\n", swi_asm2(1,2,3,4));
+    assert(cpsr_before == cpsr_read_c());
+    assert(reg1_before == cp15_ctrl_reg1_rd_u32());
+
+    // have to disable mmu before reboot.  probably should build in.
+    mmu_disable();
+    clean_reboot();
+}
+
+void int_part2(void) {
+    printk("PART 2\n");
+    int_init();
+    env_init();
+    mmu_init();
+    assert(cpsr_read_c() == SYS_MODE);
+
+    env_t *e = env_alloc();
+
+    // map the sections you need. (GF)
+    fld_t * p = mmu_map_section(e->pt, 0x0, 0x0);
+    p->domain = e->domain;
+    fld_cache_on(p);
+    fld_writeback_on(p);
+    
+    p = mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR);
+    p->domain = e->domain;
+    fld_cache_on(p);
+    fld_writeback_on(p);
+
+    p = mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR);
+    p->domain = e->domain;
+    fld_cache_on(p);
+    fld_writeback_on(p);
+    
+    p = mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR);
+    p->domain = e->domain;
+    fld_cache_on(p);
+    fld_writeback_on(p);
+
+    // gpio
+    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+
+    env_switch_to(e);
+    assert(cpsr_read_c() == SYS_MODE);
+    assert(mmu_is_on());
+    
+    swi_setup_stack(SWI_STACK_ADDR);
+
+    // uint32_t cpsr_before = cpsr_read_c();
+    // uint32_t reg1_before = cp15_ctrl_reg1_rd_u32();
+
+    printk("no caching...\n");
+    unsigned start = timer_get_time();
+    for (int i = 0; i < 10000; i++) {
+        // printk("about to call swi\n");
+        // printk("swi_asm = %d\n", swi_asm1(1,2,3,4));
+        swi_asm3();
+        // assert(cpsr_before == cpsr_read_c());
+        // assert(reg1_before == cp15_ctrl_reg1_rd_u32());
+    }
+    unsigned end = timer_get_time();
+    printk("end - start: %u\n", end - start);
+
+    printk("with caching...\n");
+    mmu_all_cache_on();
+    // cpsr_before = cpsr_read_c(); // NEED to reset the cpsr_before and reg1_before to make it work
+    // reg1_before = cp15_ctrl_reg1_rd_u32();
+    start = timer_get_time();
+    for (int i = 0; i < 10000; i++) {
+        // printk("about to call swi\n");
+        // printk("swi_asm = %d\n", swi_asm1(1,2,3,4));
+        swi_asm3();
+        // assert(cpsr_before == cpsr_read_c());
+        // assert(reg1_before == cp15_ctrl_reg1_rd_u32());
+    }
+    end = timer_get_time();
+    printk("w/ cache on: end - start: %u\n", end - start);
+
     // have to disable mmu before reboot.  probably should build in.
     mmu_disable();
     clean_reboot();
@@ -199,13 +284,18 @@ void notmain() {
     uart_init();
 
     // start the heap after the max stack address
-    kmalloc_set_start(MAX_STACK_ADDR);
+    kmalloc_set_start(MAX_STACK_ADDR); // Check it out!
 
     // implement swi interrupts without vm
     int_part0();
 #if 0
     // implement swi interrupts with vm
     int_part1();
+#endif
+
+#if 0
+    // part 2
+    int_part2();
 #endif
     clean_reboot();
 }
