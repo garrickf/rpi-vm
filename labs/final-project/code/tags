@@ -1,0 +1,172 @@
+ASID_GET	arm-coprocessor-insts.h	/^#define ASID_GET(Rd)            mrc p15, 0, Rd, c1/
+ASID_SET	arm-coprocessor-insts.h	/^#define ASID_SET(Rd)            mcr p15, 0, Rd, c1/
+CACHE_TYPE_RD	arm-coprocessor-insts.h	/^#define CACHE_TYPE_RD(Rd)       mrc p15, 0, Rd, c0/
+CLEAN_INV_DCACHE	arm-coprocessor-insts.h	/^#define CLEAN_INV_DCACHE(Rd)    mcr p15, 0, Rd, c7/
+CONTROL_REG1_RD	arm-coprocessor-insts.h	/^#define CONTROL_REG1_RD(Rd) mrc p15, 0, Rd, c1, c0/
+CONTROL_REG1_WR	arm-coprocessor-insts.h	/^#define CONTROL_REG1_WR(Rd) mcr p15, 0, Rd, c1, c0/
+DMB	arm-coprocessor-insts.h	/^#define DMB(Rd)             mcr p15, 0, Rd, c7, c1/
+DOMAIN_CTRL_RD	arm-coprocessor-insts.h	/^#define DOMAIN_CTRL_RD(Rd)      mrc p15, 0, Rd, c3/
+DOMAIN_CTRL_WR	arm-coprocessor-insts.h	/^#define DOMAIN_CTRL_WR(Rd)      mcr p15, 0, Rd, c3/
+DSB	arm-coprocessor-insts.h	/^#define DSB(Rd)             mcr p15, 0, Rd, c7, c1/
+FLUSH_BTB	arm-coprocessor-insts.h	/^#define FLUSH_BTB(Rd)         mcr p15, 0, Rd, c7, /
+INV_DCACHE	arm-coprocessor-insts.h	/^#define INV_DCACHE(Rd)          mcr p15, 0, Rd, c7/
+INV_ICACHE	arm-coprocessor-insts.h	/^#define INV_ICACHE(Rd)                            /
+Mcs140e-printf	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int main() { $/
+Mcs140e-pwm	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-pwm.c	/^int main(void) {$/
+PREFETCH_FLUSH	arm-coprocessor-insts.h	/^#define PREFETCH_FLUSH(Rd)  mcr p15, 0, Rd, c7, c5/
+TLB_CONFIG_RD	arm-coprocessor-insts.h	/^#define TLB_CONFIG_RD(Rd)       mrc p15, 0, Rd, c0/
+TTBR0_GET	arm-coprocessor-insts.h	/^#define TTBR0_GET(Rd)           mrc p15, 0, Rd, c2/
+TTBR0_SET	arm-coprocessor-insts.h	/^#define TTBR0_SET(Rd)           mcr p15, 0, Rd, c2/
+TTBR1_GET	arm-coprocessor-insts.h	/^#define TTBR1_GET(Rd)           mrc p15, 0, Rd, c2/
+TTBR1_SET	arm-coprocessor-insts.h	/^#define TTBR1_SET(Rd)           mcr p15, 0, Rd, c2/
+TTBR_BASE_CTRL_RD	arm-coprocessor-insts.h	/^#define TTBR_BASE_CTRL_RD(Rd)   mrc p15, 0, Rd, c2/
+TTBR_BASE_CTRL_WR	arm-coprocessor-insts.h	/^#define TTBR_BASE_CTRL_WR(Rd)   mcr p15, 0, Rd, c2/
+UNHANDLED	interrupts-c.c	/^#define UNHANDLED(msg,r) \\$/
+_XSTRING	/Users/garrick/dev/cs140e/cs140e-win19/libpi//assert.h	/^#define _XSTRING(x) #x$/
+__emit_float	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^char * __emit_float(char *num, double d, unsigned /
+_cstart	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-cstart.c	/^void _cstart() {$/
+align	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^union align {$/
+aligned	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-stdlib.c	/^#define aligned(ptr, n)  ((unsigned)ptr % n == 0)$/
+aligned4	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-stdlib.c	/^#define aligned4(ptr)  aligned(ptr,4)$/
+assert	/Users/garrick/dev/cs140e/cs140e-win19/libpi//assert.h	/^#define assert(bool) do { if((bool) == 0) panic(#b/
+at_user_level	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-reboot.c	/^int at_user_level(void) {$/
+aux_periphs	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^struct aux_periphs {$/
+bvec_alloc	bvec.c	/^uint32_t bvec_alloc(bvec_t *b) {$/
+bvec_free	bvec.c	/^void bvec_free(bvec_t *b, uint32_t x) {$/
+bvec_mk	bvec.c	/^bvec_t bvec_mk(uint32_t lb, uint32_t ub) {$/
+bvec_print	bvec.c	/^void bvec_print(const char *msg, bvec_t *b) {$/
+bvec_t	bvec.c	/^} bvec_t;$/
+cache_size	cp15-arm.h	/^struct cache_size {$/
+case	vm-asm.S	/^@ show up in your test case (likely not) despite b/
+check_bitfield	helper-macros.h	/^#define check_bitfield(T, field, off, nbits) do { /
+check_control_reg1	cp15-arm.c	/^void check_control_reg1(void) {$/
+check_off	/Users/garrick/dev/cs140e/cs140e-win19/libpi//helper-macros.h	/^#define check_off(T, field, off, nbytes) do {     /
+check_off_static	/Users/garrick/dev/cs140e/cs140e-win19/libpi//helper-macros.h	/^#define check_off_static(T, field, off, nbytes) do/
+clear_fifo_queues	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void clear_fifo_queues() {$/
+control_reg1_mk	cp15-arm.c	/^struct control_reg1 control_reg1_mk(void) {$/
+control_reg1_valid	cp15-arm.c	/^void control_reg1_valid(struct control_reg1 *r) {$/
+counter	interrupts-asm.S	/^  mov r1, lr            @ move old program counter/
+cp15_ctrl_reg1_t	cp15-arm.h	/^} cp15_ctrl_reg1_t;$/
+cp15_tlb_config_t	cp15-arm.h	/^} cp15_tlb_config_t;$/
+cp15_tlb_reg_t	cp15-arm.h	/^} cp15_tlb_reg_t;$/
+cpsr_print_mode	driver.c	/^void cpsr_print_mode(unsigned cpsr_r) {$/
+cpsr_read_c	driver.c	/^unsigned cpsr_read_c(void) { $/
+data_abort_vector	interrupts-c.c	/^void data_abort_vector(unsigned pc) {$/
+debug	/Users/garrick/dev/cs140e/cs140e-win19/libpi//assert.h	/^#define debug(msg, args...) \\$/
+delay_cycles	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_cycles(unsigned ticks) {$/
+delay_ms	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_ms(unsigned ms) {$/
+delay_us	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_us(unsigned us) {$/
+dev_barrier	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^void dev_barrier(void) {$/
+disable_cache	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-cache.c	/^void disable_cache(void) {$/
+disable_txrx	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void disable_txrx() {$/
+emit	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static char* emit(unsigned base, char *dst, int n,/
+enable_cache	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-cache.c	/^void enable_cache(void) {$/
+enable_txrx	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void enable_txrx() {$/
+env_alloc	driver.c	/^env_t *env_alloc(void) {$/
+env_free	driver.c	/^void env_free(env_t *e) {$/
+env_init	driver.c	/^void env_init(void) {$/
+env_switch_to	driver.c	/^void env_switch_to(env_t *e) {$/
+env_t	driver.c	/^} env_t;$/
+fast_interrupt_vector	interrupts-c.c	/^void fast_interrupt_vector(unsigned pc) {$/
+fld_cache_off	mmu.h	/^#define fld_cache_off(pte) (pte)->C = 0$/
+fld_cache_on	mmu.h	/^#define fld_cache_on(pte) (pte)->C = 1$/
+fld_check	mmu.c	/^static void fld_check(void) {$/
+fld_check_valid	mmu.c	/^static void fld_check_valid(fld_t *f) {$/
+fld_mk	mmu.c	/^static fld_t fld_mk(void) {$/
+fld_print	mmu.c	/^void fld_print(fld_t *f) {$/
+fld_t	mmu.h	/^} fld_t;$/
+fld_writeback_off	mmu.h	/^#define fld_writeback_off(pte) (pte)->B = 0$/
+fld_writeback_on	mmu.h	/^#define fld_writeback_on(pte) (pte)->B = 1$/
+fp_get_frac	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static unsigned fp_get_frac(double d) {$/
+fp_get_integral	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static long fp_get_integral(double d) {$/
+gpio_get_function	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^unsigned int gpio_get_function(unsigned int pin) {/
+gpio_init	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^void gpio_init() {$/
+gpio_is_valid_function	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^static unsigned gpio_is_valid_function(unsigned fn/
+gpio_is_valid_pin	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^static unsigned gpio_is_valid_pin(unsigned pin) {$/
+gpio_pin_to_fsel_offset	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^static unsigned gpio_pin_to_fsel_offset(unsigned p/
+gpio_pin_to_fsel_reg	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^static unsigned gpio_pin_to_fsel_reg(unsigned pin)/
+gpio_pin_to_param_reg	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^static unsigned gpio_pin_to_param_reg(unsigned pin/
+gpio_read	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^unsigned int gpio_read(unsigned int pin) {$/
+gpio_set_function	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^void gpio_set_function(unsigned int pin, unsigned /
+gpio_set_input	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^void gpio_set_input(unsigned int pin) { gpio_set_f/
+gpio_set_off	/Users/garrick/dev/cs140e/cs140e-win19/libpi//their-gpio.c	/^int gpio_set_off(unsigned pin) {$/
+gpio_set_on	/Users/garrick/dev/cs140e/cs140e-win19/libpi//their-gpio.c	/^int gpio_set_on(unsigned pin) {$/
+gpio_set_output	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^void gpio_set_output(unsigned int pin) { gpio_set_/
+gpio_write	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-cs107e-gpio.c	/^void gpio_write(unsigned int pin, unsigned int val/
+handle_swi	driver.c	/^void handle_swi(uint8_t sysno, uint32_t pc, uint32/
+init_gpio	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void init_gpio() {$/
+install_handlers	interrupts-c.c	/^static void install_handlers(void) {$/
+int16_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef short int16_t;$/
+int32_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef int int32_t;$/
+int8_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef signed char int8_t;$/
+int_init	interrupts-c.c	/^\/\/ call before int_init() to override.$/
+int_line	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-pwm.c	/^static void int_line(unsigned *pwm_choice, unsigne/
+int_part1	driver.c	/^void int_part1(void) {$/
+int_part2	driver.c	/^void int_part2(void) {$/
+interrupt_vector	interrupts-c.c	/^void interrupt_vector(unsigned pc) {$/
+is_aligned	helper-macros.h	/^#define is_aligned(x, a)        (((x) & ((typeof(x/
+is_pow2	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^#define is_pow2(x)  (((x)&-(x)) == (x))$/
+isdigit	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static int isdigit(int c) { return c >= '0' && c </
+kfree	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void kfree(void *p) { }$/
+kfree_after	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void kfree_after(void *p) { heap = p; }$/
+kfree_all	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void kfree_all(void) { heap = &__heap_start__; }$/
+kmalloc	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void *kmalloc(unsigned sz) {$/
+kmalloc_aligned	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void *kmalloc_aligned(unsigned nbytes, unsigned al/
+kmalloc_heap_end	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void *kmalloc_heap_end(void) { return heap; }$/
+kmalloc_heap_start	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void *kmalloc_heap_start(void) { return &__heap_st/
+kmalloc_set_start	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^void kmalloc_set_start(unsigned _addr) {$/
+memcmp	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-stdlib.c	/^int memcmp(const void *_s1, const void *_s2, size_/
+memcpy	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-stdlib.c	/^void *memcpy(void *dst, const void *src, size_t nb/
+memset	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-stdlib.c	/^void *memset(void *_p, int c, size_t n) {$/
+mmu_all_cache_off	mmu.c	/^void mmu_all_cache_off(void) {$/
+mmu_dcache_off	cp15-arm.h	/^#define mmu_dcache_off(r) (r).C_unified_enable = 0/
+mmu_dcache_on	cp15-arm.h	/^#define mmu_dcache_on(r) (r).C_unified_enable = 1$/
+mmu_disable	mmu.c	/^void mmu_disable(void) {$/
+mmu_disable_set	mmu.c	/^void mmu_disable_set(cp15_ctrl_reg1_t c) {$/
+mmu_enable	mmu.c	/^void mmu_enable(void) {$/
+mmu_enable_set	mmu.c	/^void mmu_enable_set(cp15_ctrl_reg1_t c) {$/
+mmu_icache_off	cp15-arm.h	/^#define mmu_icache_off(r) (r).I_icache_enable = 0$/
+mmu_icache_on	cp15-arm.h	/^#define mmu_icache_on(r) (r).I_icache_enable = 1$/
+mmu_init	mmu.c	/^void mmu_init(void) { $/
+mmu_is_on	driver.c	/^int mmu_is_on(void) {$/
+mmu_l2cache_off	cp15-arm.h	/^#define mmu_l2cache_off(r) (r).L2_enabled = 0$/
+mmu_l2cache_on	cp15-arm.h	/^#define mmu_l2cache_on(r) (r).L2_enabled = 1$/
+mmu_lookup	mmu.c	/^fld_t *mmu_lookup(fld_t *pt, uint32_t va) {$/
+mmu_map_section	mmu.c	/^fld_t *mmu_map_section(fld_t *pt, uint32_t va, uin/
+mmu_predict_off	cp15-arm.h	/^#define mmu_predict_off(r) (r).Z_branch_pred = 0$/
+mmu_predict_on	cp15-arm.h	/^#define mmu_predict_on(r) (r).Z_branch_pred = 1$/
+mmu_pt_alloc	mmu.c	/^fld_t *mmu_pt_alloc(unsigned sz) {$/
+mmu_write_buffer_off	cp15-arm.h	/^#define mmu_write_buffer_off(r) (r).W_write_buf = /
+mmu_write_buffer_on	cp15-arm.h	/^#define mmu_write_buffer_on(r) (r).W_write_buf = 1/
+notmain	driver.c	/^void notmain() {$/
+pad	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static char* pad(char *p,  char *base, int width) /
+panic	/Users/garrick/dev/cs140e/cs140e-win19/libpi//assert.h	/^#define panic(msg, args...) do { 					\\$/
+prefetch_abort_vector	interrupts-c.c	/^void prefetch_abort_vector(unsigned pc) {$/
+print_field	helper-macros.h	/^#define print_field(x, field) do {                /
+printk	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int printk(const char *fmt, ...) {$/
+putk	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int putk(const char *p) {$/
+pwm_compute	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-pwm.c	/^void pwm_compute(unsigned *pwm_choices, unsigned o/
+pwm_print	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-pwm.c	/^void pwm_print(unsigned *pwm_choices, unsigned on,/
+register	interrupts-asm.S	/^    mrs r0,cpsr                 @ move process sta/
+reset_vector	interrupts-c.c	/^void reset_vector(unsigned pc) {$/
+reverse	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static char* reverse(char *dst, int n, char *p, ch/
+roundup	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-kmalloc.c	/^#define roundup(x,n) (((x)+((n)-1))&(~((n)-1)))$/
+rpi_irq_controller_t	rpi-interrupts.h	/^} rpi_irq_controller_t;$/
+rpi_putchar	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int rpi_putchar(int c) { uart_putc(c); return c; }/
+rpi_rand	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-rand.c	/^unsigned short rpi_rand(void) {$/
+set_baudrate	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void set_baudrate() {$/
+set_bitmode	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void set_bitmode() {$/
+set_user_level	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-reboot.c	/^void set_user_level(void) {$/
+size_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned size_t;$/
+snprintk	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int snprintk(char *buf, size_t n, const char *fmt,/
+software_interrupt_vector	interrupts-c.c	/^void software_interrupt_vector(unsigned pc) {$/
+strcat	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static char *strcat (char *dest, const char *src)$/
+timer_get_time	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^unsigned timer_get_time(void) {$/
+trunc	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static long trunc(double d) {$/
+uart_hex	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int uart_hex(unsigned h) {$/
+uint16_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned short uint16_t;$/
+uint32_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned uint32_t;$/
+uint8_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned char uint8_t;$/
+uintptr_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned *uintptr_t;$/
+undefined_instruction_vector	interrupts-c.c	/^void undefined_instruction_vector(unsigned pc) {$/
+va_printk	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static int va_printk(char *buf, int n, const char /
