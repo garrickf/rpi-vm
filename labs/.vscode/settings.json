@@ -2,6 +2,7 @@
     "files.associations": {
         "bzt-sd.h": "c",
         "helper-macros.h": "c",
-        "fat32.h": "c"
+        "fat32.h": "c",
+        "cp15-arm.h": "c"
     }
 }

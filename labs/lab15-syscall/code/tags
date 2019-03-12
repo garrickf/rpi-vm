@@ -40,6 +40,8 @@ cache_size	cp15-arm.h	/^struct cache_size {$/
 case	vm-asm.S	/^@ show up in your test case (likely not) despite b/
 check_bitfield	helper-macros.h	/^#define check_bitfield(T, field, off, nbits) do { /
 check_control_reg1	cp15-arm.c	/^void check_control_reg1(void) {$/
+check_off	/Users/garrick/dev/cs140e/cs140e-win19/libpi//helper-macros.h	/^#define check_off(T, field, off, nbytes) do {     /
+check_off_static	/Users/garrick/dev/cs140e/cs140e-win19/libpi//helper-macros.h	/^#define check_off_static(T, field, off, nbytes) do/
 clear_fifo_queues	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^static void clear_fifo_queues() {$/
 control_reg1_mk	cp15-arm.c	/^struct control_reg1 control_reg1_mk(void) {$/
 control_reg1_valid	cp15-arm.c	/^void control_reg1_valid(struct control_reg1 *r) {$/
@@ -51,7 +53,7 @@ cpsr_print_mode	driver.c	/^void cpsr_print_mode(unsigned cpsr_r) {$/
 cpsr_read_c	driver.c	/^unsigned cpsr_read_c(void) { $/
 data_abort_vector	interrupts-c.c	/^void data_abort_vector(unsigned pc) {$/
 debug	/Users/garrick/dev/cs140e/cs140e-win19/libpi//assert.h	/^#define debug(msg, args...) \\$/
-delay	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay(unsigned ticks) {$/
+delay_cycles	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_cycles(unsigned ticks) {$/
 delay_ms	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_ms(unsigned ms) {$/
 delay_us	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^void delay_us(unsigned us) {$/
 dev_barrier	/Users/garrick/dev/cs140e/cs140e-win19/libpi//my-uart.c	/^void dev_barrier(void) {$/
@@ -161,8 +163,10 @@ software_interrupt_vector	interrupts-c.c	/^void software_interrupt_vector(unsign
 strcat	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static char *strcat (char *dest, const char *src)$/
 timer_get_time	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-timer.c	/^unsigned timer_get_time(void) {$/
 trunc	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static long trunc(double d) {$/
+uart_hex	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^int uart_hex(unsigned h) {$/
 uint16_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned short uint16_t;$/
 uint32_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned uint32_t;$/
 uint8_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned char uint8_t;$/
+uintptr_t	/Users/garrick/dev/cs140e/cs140e-win19/libpi//rpi.h	/^	typedef unsigned *uintptr_t;$/
 undefined_instruction_vector	interrupts-c.c	/^void undefined_instruction_vector(unsigned pc) {$/
 va_printk	/Users/garrick/dev/cs140e/cs140e-win19/libpi//cs140e-printf.c	/^static int va_printk(char *buf, int n, const char /

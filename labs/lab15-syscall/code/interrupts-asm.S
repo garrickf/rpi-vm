@@ -110,7 +110,7 @@ _interrupt_table_end:
 @ a handler for swi interrupts
 software_interrupt_asm:  
   @ push {r0, lr}
-  push  {r0-r12,lr}         @ XXX: pushing too many registers: only need caller
+  push  {r0-r12,lr}     @ XXX: pushing too many registers: only need caller
   @ vpush {s0-s15}	    @ uncomment if want to save caller-saved fp regs
 
   ldr r0, [lr, #-4]
@@ -124,7 +124,7 @@ software_interrupt_asm:
   pop   {r0-r12,lr} 	    @ pop integer registers TODO: software_interrupt_asm for different nums of arguments
   @ pop {r0, lr}
 
-  sub lr, lr, #4
+  @ sub lr, lr, #4    @ Don't subtract, you want to go to the next instruction (lr points to that) WHY DID I DO THAT
   @ return from interrupt handler: will re-enable general ints.
   movs    pc, lr       @ moves the link register into the pc and implicitly
                         @ loads the PC with the result, then copies the 
@@ -144,9 +144,12 @@ prefetch_abort_asm:
   mov   sp, #INT_STACK_ADDR
   bl    prefetch_abort_vector
 data_abort_asm:
-  sub   lr, lr, #4
   mov   sp, #INT_STACK_ADDR
+  push {r0, lr}
   bl    data_abort_vector
+  pop {r0, lr}
+  sub   lr, lr, #4
+  movs  pc, lr              @ Continue on as if nothing happened
 interrupt_asm:
   sub   lr, lr, #4
   mov   sp, #INT_STACK_ADDR

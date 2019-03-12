@@ -430,7 +430,7 @@ void mmu_map_section(fld_t *pt, unsigned va, unsigned pa) {
     // XN is 0 (executable)
     pte->domain = 0b11; // manager
     pte->AP = 0b11;
-    pte->sec_base_addr = (pa >> 20); // Map the virtual address
+    pte->sec_base_addr = (pa >> 20); // Map the virtual address (could use fld_set_base_addr)
     
     fld_print(pte); // Check off: force crash
     // pte->tag = 0; // Tag to 0 causes hang
@@ -446,7 +446,7 @@ void mmu_map_section(fld_t *pt, unsigned va, unsigned pa) {
 
 // would want to initialize everything.
 fld_t *mmu_init(unsigned base) {
-    demand(is_aligned(base, 14), must be 14 bit aligned!);
+    demand(is_aligned(base, 14), "must be 14 bit aligned!");
 
     fld_t *pt = (void*)base;
     memset(pt, 0, 4096 * sizeof *pt);
@@ -454,6 +454,11 @@ fld_t *mmu_init(unsigned base) {
     // should do one-time invalidation of all caches, etc.
     return pt;
 }
+
+// // Test for invalid access
+// void handle_data_abort() {
+//     printk("invalid access!");
+// }
 
 // My function, lifted from part 1 code
 void part0_tests(void) {
@@ -598,12 +603,52 @@ void part1(void) {
     printk("******** success ************\n");
 }
 
+// Hard to do in here because of conflicting symbols
+// #define RPI_VECTOR_START  0
+// extern unsigned _interrupt_table;
+// extern unsigned _interrupt_table_end;
+// // location of these registers.
+// #define INTERRUPT_ENABLE_1  0x2000b210
+// #define INTERRUPT_ENABLE_2  0x2000b214
+// #define INTERRUPT_DISABLE_1 0x2000b21c
+// #define INTERRUPT_DISABLE_2 0x2000b220
+
+// /*
+//  * Copy in interrupt vector table and FIQ handler _table and _table_end
+//  * are symbols defined in the interrupt assembly file, at the beginning
+//  * and end of the table and its embedded constants.
+//  */
+// static void install_handlers(void) {
+//         unsigned *dst = (void*)RPI_VECTOR_START,
+//                  *src = &_interrupt_table,
+//                  n = &_interrupt_table_end - src;
+//         for(int i = 0; i < n; i++)
+//                 dst[i] = src[i];
+// }
+
+// void system_disable_interrupts(void);
+// void system_enable_interrupts();
+
+// void int_init(void) {
+//     // BCM2835 manual, section 7.5: turn off all GPIO interrupts.
+//     PUT32(INTERRUPT_DISABLE_1, 0xffffffff);
+//     PUT32(INTERRUPT_DISABLE_2, 0xffffffff);
+//     system_disable_interrupts();
+//     // cp15_barrier();
+
+//     // setup the interrupt vectors.
+//     install_handlers(); // Most important
+//     // int_intialized_p = 1;
+// }
+
 /**********************************************************************
  * implement part0, part1, part2.
  */
 
 void notmain() {
     uart_init();
+    // int_init();
+    // system_enable_interrupts(); // Want to be able to do something like this
     printk("implement one at a time.\n");
     // part0(); // TODO: try other parts // 3 from part 0
     // part0_tests(); // 1 and 2 from part 0

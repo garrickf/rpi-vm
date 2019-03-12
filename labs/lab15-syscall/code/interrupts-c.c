@@ -27,7 +27,8 @@ void prefetch_abort_vector(unsigned pc) {
 	UNHANDLED("prefetch abort", pc);
 }
 void data_abort_vector(unsigned pc) {
-	UNHANDLED("data abort", pc);
+	// UNHANDLED("data abort", pc); // panic will kill it?
+    printk("ERROR: unhandled exception <data abort> at PC=%x\n", pc); // Should trudge on
 }
 
 static int int_intialized_p = 0;

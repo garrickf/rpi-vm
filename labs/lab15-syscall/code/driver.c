@@ -182,6 +182,9 @@ void int_part1(void) {
     env_switch_to(e);
     assert(cpsr_read_c() == SYS_MODE);
     assert(mmu_is_on());
+
+    int test1 = *((int *)0x99999999999); // Test deref of unmapped region, remove the "- 4" to go straight to the boundary
+    printk("heyo: %d\n", test1);
     
     swi_setup_stack(SWI_STACK_ADDR);
 
@@ -287,7 +290,7 @@ void notmain() {
     kmalloc_set_start(MAX_STACK_ADDR); // Check it out!
 
     // implement swi interrupts without vm
-    int_part0();
+    int_part1();
 #if 0
     // implement swi interrupts with vm
     int_part1();
