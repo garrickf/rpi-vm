@@ -352,47 +352,54 @@ Disassembly of section .text:
  53c:	e28dd008 	add	sp, sp, #8
  540:	e12fff1e 	bx	lr
 
-00000544 <putk>:
- 544:	e92d4010 	push	{r4, lr}
- 548:	e1a04000 	mov	r4, r0
- 54c:	e5d00000 	ldrb	r0, [r0]
- 550:	e3500000 	cmp	r0, #0
- 554:	0a000003 	beq	568 <putk+0x24>
- 558:	ebfffffe 	bl	0 <uart_putc>
- 55c:	e5f40001 	ldrb	r0, [r4, #1]!
- 560:	e3500000 	cmp	r0, #0
- 564:	1afffffb 	bne	558 <putk+0x14>
- 568:	e3a00001 	mov	r0, #1
- 56c:	e8bd8010 	pop	{r4, pc}
+00000544 <uart_hex>:
+ 544:	e92d4008 	push	{r3, lr}
+ 548:	e59f0004 	ldr	r0, [pc, #4]	; 554 <uart_hex+0x10>
+ 54c:	ebfffffe 	bl	14 <printk>
+ 550:	e8bd8008 	pop	{r3, pc}
+ 554:	000000c4 	andeq	r0, r0, r4, asr #1
 
-00000570 <panic>:
- 570:	e92d4008 	push	{r3, lr}
- 574:	e1a06000 	mov	r6, r0
- 578:	e1a05001 	mov	r5, r1
- 57c:	e1a04002 	mov	r4, r2
- 580:	e59f0018 	ldr	r0, [pc, #24]	; 5a0 <panic+0x30>
- 584:	ebfffffe 	bl	544 <putk>
- 588:	e59f0014 	ldr	r0, [pc, #20]	; 5a4 <panic+0x34>
- 58c:	e1a01006 	mov	r1, r6
- 590:	e1a02005 	mov	r2, r5
- 594:	e1a03004 	mov	r3, r4
- 598:	ebfffffe 	bl	14 <printk>
- 59c:	ebfffffe 	bl	0 <rpi_reboot>
- 5a0:	000000c4 	andeq	r0, r0, r4, asr #1
- 5a4:	000000d0 	ldrdeq	r0, [r0], -r0	; <UNPREDICTABLE>
+00000558 <putk>:
+ 558:	e92d4010 	push	{r4, lr}
+ 55c:	e1a04000 	mov	r4, r0
+ 560:	e5d00000 	ldrb	r0, [r0]
+ 564:	e3500000 	cmp	r0, #0
+ 568:	0a000003 	beq	57c <putk+0x24>
+ 56c:	ebfffffe 	bl	0 <uart_putc>
+ 570:	e5f40001 	ldrb	r0, [r4, #1]!
+ 574:	e3500000 	cmp	r0, #0
+ 578:	1afffffb 	bne	56c <putk+0x14>
+ 57c:	e3a00001 	mov	r0, #1
+ 580:	e8bd8010 	pop	{r4, pc}
+
+00000584 <panic>:
+ 584:	e92d4008 	push	{r3, lr}
+ 588:	e1a06000 	mov	r6, r0
+ 58c:	e1a05001 	mov	r5, r1
+ 590:	e1a04002 	mov	r4, r2
+ 594:	e59f0018 	ldr	r0, [pc, #24]	; 5b4 <panic+0x30>
+ 598:	ebfffffe 	bl	558 <putk>
+ 59c:	e59f0014 	ldr	r0, [pc, #20]	; 5b8 <panic+0x34>
+ 5a0:	e1a01006 	mov	r1, r6
+ 5a4:	e1a02005 	mov	r2, r5
+ 5a8:	e1a03004 	mov	r3, r4
+ 5ac:	ebfffffe 	bl	14 <printk>
+ 5b0:	ebfffffe 	bl	0 <rpi_reboot>
+ 5b4:	000000c8 	andeq	r0, r0, r8, asr #1
+ 5b8:	000000d4 	ldrdeq	r0, [r0], -r4
 
 Disassembly of section .bss:
 
-00000000 <buf.3875>:
+00000000 <buf.3909>:
 	...
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3833>:
+00000000 <__FUNCTION__.3867>:
    0:	74696d65 	strbtvc	r6, [r9], #-3429	; 0xd65
    4:	00000000 	andeq	r0, r0, r0
 
-00000008 <__FUNCTION__.3848>:
+00000008 <__FUNCTION__.3882>:
    8:	705f6176 	subsvc	r6, pc, r6, ror r1	; <UNPREDICTABLE>
    c:	746e6972 	strbtvc	r6, [lr], #-2418	; 0x972
   10:	0000006b 	andeq	r0, r0, fp, rrx
@@ -402,7 +409,7 @@ Disassembly of section .rodata.str1.4:
 00000000 <.rodata.str1.4>:
    0:	494e4150 	stmdbmi	lr, {r4, r6, r8, lr}^
    4:	73253a43 	teqvc	r5, #274432	; 0x43000
-   8:	3a73253a 	bcc	1cc94f8 <panic+0x1cc8f88>
+   8:	3a73253a 	bcc	1cc94f8 <panic+0x1cc8f74>
    c:	303a6425 	eorscc	r6, sl, r5, lsr #8
   10:	0000000a 	andeq	r0, r0, sl
   14:	34317363 	ldrtcc	r7, [r1], #-867	; 0x363
@@ -420,24 +427,24 @@ Disassembly of section .rodata.str1.4:
   44:	00003130 	andeq	r3, r0, r0, lsr r1
   48:	494e4150 	stmdbmi	lr, {r4, r6, r8, lr}^
   4c:	73253a43 	teqvc	r5, #274432	; 0x43000
-  50:	3a73253a 	bcc	1cc9540 <panic+0x1cc8fd0>
+  50:	3a73253a 	bcc	1cc9540 <panic+0x1cc8fbc>
   54:	773a6425 	ldrvc	r6, [sl, -r5, lsr #8]!
   58:	68746469 	ldmdavs	r4!, {r0, r3, r5, r6, sl, sp, lr}^
   5c:	33203c20 	teqcc	r0, #32, 24	; 0x2000
   60:	00000a32 	andeq	r0, r0, r2, lsr sl
   64:	494e4150 	stmdbmi	lr, {r4, r6, r8, lr}^
   68:	73253a43 	teqvc	r5, #274432	; 0x43000
-  6c:	3a73253a 	bcc	1cc955c <panic+0x1cc8fec>
+  6c:	3a73253a 	bcc	1cc955c <panic+0x1cc8fd8>
   70:	663a6425 	ldrtvs	r6, [sl], -r5, lsr #8
   74:	74616f6c 	strbtvc	r6, [r1], #-3948	; 0xf6c
   78:	746f6e20 	strbtvc	r6, [pc], #-3616	; 80 <.rodata.str1.4+0x80>
   7c:	616e6520 	cmnvs	lr, r0, lsr #10
   80:	64656c62 	strbtvs	r6, [r5], #-3170	; 0xc62
-  84:	0a212121 	beq	848510 <panic+0x847fa0>
+  84:	0a212121 	beq	848510 <panic+0x847f8c>
   88:	00000000 	andeq	r0, r0, r0
   8c:	494e4150 	stmdbmi	lr, {r4, r6, r8, lr}^
   90:	73253a43 	teqvc	r5, #274432	; 0x43000
-  94:	3a73253a 	bcc	1cc9584 <panic+0x1cc9014>
+  94:	3a73253a 	bcc	1cc9584 <panic+0x1cc9000>
   98:	703a6425 	eorsvc	r6, sl, r5, lsr #8
   9c:	746e6972 	strbtvc	r6, [lr], #-2418	; 0x972
   a0:	6e203a6b 	vnmulvs.f32	s6, s0, s23
@@ -447,19 +454,20 @@ Disassembly of section .rodata.str1.4:
   b0:	63657073 	cmnvs	r5, #115	; 0x73
   b4:	65696669 	strbvs	r6, [r9, #-1641]!	; 0x669
   b8:	25272072 	strcs	r2, [r7, #-114]!	; 0x72
-  bc:	0a0a2763 	beq	289e50 <panic+0x2898e0>
+  bc:	0a0a2763 	beq	289e50 <panic+0x2898cc>
   c0:	00000000 	andeq	r0, r0, r0
-  c4:	4e41503c 	mcrmi	0, 2, r5, cr1, cr12, {1}
-  c8:	3a3e4349 	bcc	f90df4 <panic+0xf90884>
-  cc:	00000000 	andeq	r0, r0, r0
-  d0:	253a7325 	ldrcs	r7, [sl, #-805]!	; 0x325
-  d4:	50203a64 	eorpl	r3, r0, r4, ror #20
-  d8:	43494e41 	movtmi	r4, #40513	; 0x9e41
-  dc:	4e415020 	cdpmi	0, 4, cr5, cr1, cr0, {1}
-  e0:	50204349 	eorpl	r4, r0, r9, asr #6
-  e4:	43494e41 	movtmi	r4, #40513	; 0x9e41
-  e8:	7325203a 	teqvc	r5, #58	; 0x3a
-  ec:	0000000a 	andeq	r0, r0, sl
+  c4:	00007825 	andeq	r7, r0, r5, lsr #16
+  c8:	4e41503c 	mcrmi	0, 2, r5, cr1, cr12, {1}
+  cc:	3a3e4349 	bcc	f90df8 <panic+0xf90874>
+  d0:	00000000 	andeq	r0, r0, r0
+  d4:	253a7325 	ldrcs	r7, [sl, #-805]!	; 0x325
+  d8:	50203a64 	eorpl	r3, r0, r4, ror #20
+  dc:	43494e41 	movtmi	r4, #40513	; 0x9e41
+  e0:	4e415020 	cdpmi	0, 4, cr5, cr1, cr0, {1}
+  e4:	50204349 	eorpl	r4, r0, r9, asr #6
+  e8:	43494e41 	movtmi	r4, #40513	; 0x9e41
+  ec:	7325203a 	teqvc	r5, #58	; 0x3a
+  f0:	0000000a 	andeq	r0, r0, sl
 
 Disassembly of section .comment:
 
@@ -550,7 +558,7 @@ Disassembly of section .text:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3784>:
+00000000 <__FUNCTION__.3818>:
    0:	5f697072 	svcpl	0x00697072
    4:	6f626572 	svcvs	0x00626572
    8:	0000746f 	andeq	r7, r0, pc, ror #8
@@ -605,30 +613,40 @@ cs140e-timer.o:     file format elf32-littlearm
 
 Disassembly of section .text:
 
-00000000 <timer_get_time>:
-   0:	e92d4008 	push	{r3, lr}
-   4:	e59f0004 	ldr	r0, [pc, #4]	; 10 <timer_get_time+0x10>
-   8:	ebfffffe 	bl	0 <GET32>
-   c:	e8bd8008 	pop	{r3, pc}
-  10:	20003004 	andcs	r3, r0, r4
+00000000 <delay_cycles>:
+   0:	e2403001 	sub	r3, r0, #1
+   4:	e3500000 	cmp	r0, #0
+   8:	012fff1e 	bxeq	lr
+   c:	e2811000 	add	r1, r1, #0
+  10:	e2433001 	sub	r3, r3, #1
+  14:	e3730001 	cmn	r3, #1
+  18:	1afffffb 	bne	c <delay_cycles+0xc>
+  1c:	e12fff1e 	bx	lr
 
-00000014 <delay_us>:
-  14:	e92d4038 	push	{r3, r4, r5, lr}
-  18:	e1a05000 	mov	r5, r0
-  1c:	ebfffffe 	bl	0 <timer_get_time>
-  20:	e1a04000 	mov	r4, r0
-  24:	ebfffffe 	bl	0 <timer_get_time>
-  28:	e0640000 	rsb	r0, r4, r0
-  2c:	e1500005 	cmp	r0, r5
-  30:	3afffffb 	bcc	24 <delay_us+0x10>
-  34:	e8bd8038 	pop	{r3, r4, r5, pc}
+00000020 <timer_get_time>:
+  20:	e92d4008 	push	{r3, lr}
+  24:	e59f0004 	ldr	r0, [pc, #4]	; 30 <timer_get_time+0x10>
+  28:	ebfffffe 	bl	0 <GET32>
+  2c:	e8bd8008 	pop	{r3, pc}
+  30:	20003004 	andcs	r3, r0, r4
 
-00000038 <delay_ms>:
-  38:	e92d4008 	push	{r3, lr}
-  3c:	e3a03ffa 	mov	r3, #1000	; 0x3e8
-  40:	e0000093 	mul	r0, r3, r0
-  44:	ebfffffe 	bl	14 <delay_us>
-  48:	e8bd8008 	pop	{r3, pc}
+00000034 <delay_us>:
+  34:	e92d4038 	push	{r3, r4, r5, lr}
+  38:	e1a05000 	mov	r5, r0
+  3c:	ebfffffe 	bl	20 <timer_get_time>
+  40:	e1a04000 	mov	r4, r0
+  44:	ebfffffe 	bl	20 <timer_get_time>
+  48:	e0640000 	rsb	r0, r4, r0
+  4c:	e1500005 	cmp	r0, r5
+  50:	3afffffb 	bcc	44 <delay_us+0x10>
+  54:	e8bd8038 	pop	{r3, r4, r5, pc}
+
+00000058 <delay_ms>:
+  58:	e92d4008 	push	{r3, lr}
+  5c:	e3a03ffa 	mov	r3, #1000	; 0x3e8
+  60:	e0000093 	mul	r0, r3, r0
+  64:	ebfffffe 	bl	34 <delay_us>
+  68:	e8bd8008 	pop	{r3, pc}
 
 Disassembly of section .comment:
 
@@ -797,6 +815,42 @@ Disassembly of section .text:
  160:	ebfffffe 	bl	0 <dmb>
  164:	ebfffffe 	bl	0 <dsb>
  168:	e8bd8008 	pop	{r3, pc}
+
+0000016c <strcat>:
+ 16c:	e1a02000 	mov	r2, r0
+ 170:	e1a03002 	mov	r3, r2
+ 174:	e4d3c001 	ldrb	ip, [r3], #1
+ 178:	e35c0000 	cmp	ip, #0
+ 17c:	11a02003 	movne	r2, r3
+ 180:	1afffffa 	bne	170 <strcat+0x4>
+ 184:	e2422001 	sub	r2, r2, #1
+ 188:	e4d13001 	ldrb	r3, [r1], #1
+ 18c:	e5e23001 	strb	r3, [r2, #1]!
+ 190:	e3530000 	cmp	r3, #0
+ 194:	1afffffb 	bne	188 <strcat+0x1c>
+ 198:	e12fff1e 	bx	lr
+
+0000019c <strlen>:
+ 19c:	e5d03000 	ldrb	r3, [r0]
+ 1a0:	e3530000 	cmp	r3, #0
+ 1a4:	0a000006 	beq	1c4 <strlen+0x28>
+ 1a8:	e1a03000 	mov	r3, r0
+ 1ac:	e3a00000 	mov	r0, #0
+ 1b0:	e2800001 	add	r0, r0, #1
+ 1b4:	e5f32001 	ldrb	r2, [r3, #1]!
+ 1b8:	e3520000 	cmp	r2, #0
+ 1bc:	1afffffb 	bne	1b0 <strlen+0x14>
+ 1c0:	e12fff1e 	bx	lr
+ 1c4:	e3a00000 	mov	r0, #0
+ 1c8:	e12fff1e 	bx	lr
+
+000001cc <strcpy>:
+ 1cc:	e1a02000 	mov	r2, r0
+ 1d0:	e4d13001 	ldrb	r3, [r1], #1
+ 1d4:	e4c23001 	strb	r3, [r2], #1
+ 1d8:	e3530000 	cmp	r3, #0
+ 1dc:	1afffffb 	bne	1d0 <strcpy+0x4>
+ 1e0:	e12fff1e 	bx	lr
 
 Disassembly of section .comment:
 
@@ -1042,14 +1096,14 @@ Disassembly of section .data:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3789>:
+00000000 <__FUNCTION__.3823>:
    0:	6c616d6b 	stclvs	13, cr6, [r1], #-428	; 0xfffffe54
    4:	5f636f6c 	svcpl	0x00636f6c
    8:	5f746573 	svcpl	0x00746573
    c:	72617473 	rsbvc	r7, r1, #1929379840	; 0x73000000
   10:	00000074 	andeq	r0, r0, r4, ror r0
 
-00000014 <__FUNCTION__.3798>:
+00000014 <__FUNCTION__.3832>:
   14:	6c616d6b 	stclvs	13, cr6, [r1], #-428	; 0xfffffe54
   18:	5f636f6c 	svcpl	0x00636f6c
   1c:	67696c61 	strbvs	r6, [r9, -r1, ror #24]!
@@ -1454,17 +1508,17 @@ Disassembly of section .text:
 
 Disassembly of section .rodata:
 
-00000000 <__FUNCTION__.3801>:
+00000000 <__FUNCTION__.3835>:
    0:	5f6d7770 	svcpl	0x006d7770
    4:	706d6f63 	rsbvc	r6, sp, r3, ror #30
    8:	00657475 	rsbeq	r7, r5, r5, ror r4
 
-0000000c <__FUNCTION__.3793>:
+0000000c <__FUNCTION__.3827>:
    c:	5f746e69 	svcpl	0x00746e69
   10:	656e696c 	strbvs	r6, [lr, #-2412]!	; 0x96c
   14:	00000000 	andeq	r0, r0, r0
 
-00000018 <__FUNCTION__.3808>:
+00000018 <__FUNCTION__.3842>:
   18:	5f6d7770 	svcpl	0x006d7770
   1c:	6e697270 	mcrvs	2, 3, r7, cr9, cr0, {3}
   20:	00000074 	andeq	r0, r0, r4, ror r0

@@ -45,10 +45,15 @@ Byte Range  Description Essential
 */
 struct mbr {
     // you'll have to define the rest of the structure.
+    unsigned char boot_code[446];
+    unsigned char part_tab1[16];
+    unsigned char part_tab2[16];
+    unsigned char part_tab3[16];
+    unsigned char part_tab4[16];
     uint16_t sigval;
 };
 // uncomment this out when done.
-// _Static_assert(sizeof(struct mbr) == 512, "mbr size wrong");
+_Static_assert(sizeof(struct mbr) == 512, "mbr size wrong");
 
 /*
 Bytes   Content

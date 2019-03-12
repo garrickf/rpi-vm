@@ -2,7 +2,7 @@
 # 	http://scottmcpeak.com/autodepend/autodepend.html
 
 NAME= sd
-OBJS = driver.o fat32-helpers.o external-code/unicode-utf8.o 
+OBJS = driver.o fat32-helpers.o external-code/unicode-utf8.o external-code/bzt-sd.o 
 
 #external-code/bzt-sd.o 
 

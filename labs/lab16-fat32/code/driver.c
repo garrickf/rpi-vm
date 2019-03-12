@@ -3,12 +3,20 @@
 #include "fat32.h"
 #include "pi-fs.h"
 #include "helper-macros.h"
+#include "bzt-sd.h" // Include the code we copped (part 1)
+
+// Constants for values we know
+#define BYTES_PER_SECTOR 512
 
 // allocate <nsec> worth of space, read in from SD card, return pointer.
+// lba: logical block address
 void *sec_read(uint32_t lba, uint32_t nsec) {
-    void *data = 0;
-    unimplemented();
-    return data;
+    printk("sec_read: lba: %x, nsec: %d\n", lba, nsec);
+    // Malloc the buffer, baby
+    unsigned char *buf = kmalloc(nsec * BYTES_PER_SECTOR);
+    // Pass in nsec ONLY
+    sd_readblock(lba, buf, nsec); // Only one-shot because start up cost and complexity a lot (not like read, failure is worse)
+    return buf;
 }
 
 // there are other tags right?
@@ -38,13 +46,19 @@ static struct fat32 fat32_mk(uint32_t lba_start, fat32_boot_sec_t *b) {
 
     fs.fat_begin_lba = lba_start + b->reserved_area_nsec;
     printk("begin lba = %d\n", fs.fat_begin_lba);
-    unimplemented();
+    
+    fs.cluster_begin_lba = fs.fat_begin_lba + b->nsec_per_fat * b->nfats;
+    fs.sectors_per_cluster = b->sec_per_cluster;
+    fs.root_dir_first_cluster = b->first_cluster;
+
+    fs.fat = sec_read(fs.fat_begin_lba, b->nfats * b->nsec_per_fat); // Malloc the thing
+    fs.n_fat = b->nfats;
     return fs;
 }
 
 // given cluster_number get lba
 uint32_t cluster_to_lba(struct fat32 *f, uint32_t cluster_num) {
-    unimplemented();
+    return f->cluster_begin_lba + (cluster_num - 2) * f->sectors_per_cluster;
 }
 
 int fat32_dir_cnt_entries(fat32_dir_t *d, int n) {
@@ -56,12 +70,37 @@ int fat32_dir_cnt_entries(fat32_dir_t *d, int n) {
 }
 
 // translate fat32 directories to dirents.
+// pi_dir_t fat32_to_dirent(fat32_fs_t *fs, fat32_dir_t *d, uint32_t n) {
+//     pi_dir_t p;
+//     p.n = fat32_dir_cnt_entries(d,n);
+//     p.dirs = kmalloc(p.n * sizeof *p.dirs); 
+
+//     unimplemented();
+//     return p;
+// }
+// fat32_dir_t is in fat32.h
+// dirent_t is in pi-fs.h
 pi_dir_t fat32_to_dirent(fat32_fs_t *fs, fat32_dir_t *d, uint32_t n) {
     pi_dir_t p;
-    p.n = fat32_dir_cnt_entries(d,n);
-    p.dirs = kmalloc(p.n * sizeof *p.dirs); 
 
-    unimplemented();
+    // macos
+    p.n = fat32_dir_cnt_entries(d,n);
+    p.dirs = kmalloc(p.n * sizeof *p.dirs);
+
+    int used = 0;
+    fat32_dir_t *end = d+n;
+    for(; d < end; d++) {
+        if(!fat32_dirent_free(d)) {
+            dirent_t *de = &p.dirs[used++];
+            assert(used <= p.n);
+
+            d = fat32_dir_filename(de->name, d, end);
+            // Add more information to the struct
+            uint32_t cluster_id = (d->hi_start << 4 * sizeof(uint16_t)) | d->lo_start;
+            de->cluster_id = cluster_id;
+            de->nbytes = d->file_nbytes;
+        }
+    }
     return p;
 }
 
@@ -77,7 +116,39 @@ pi_file_t fat32_read_file(fat32_fs_t *fs, dirent_t *d) {
     //          fat32_fat_entry_type(fat[id]) == LAST_CLUSTER.
     // compute how many sectors in cluster.
     // allocate this many bytes.
-    unimplemented();
+    // *** Begin my code ***
+    f.n_data = d->nbytes;
+    f.n_alloc = roundup(f.n_data, BYTES_PER_SECTOR);
+
+    int totalSectors = f.n_alloc / BYTES_PER_SECTOR;
+    int sectorsRead = 0;
+    printk("cluster id: %d, ndata: %d, nalloc: %d\n totalSectors: %d", id, f.n_data, f.n_alloc, totalSectors);
+    
+    unsigned char *buf = kmalloc(f.n_alloc); // Alloc this much space
+
+    while (sectorsRead < totalSectors) {
+        // Read up to fs->sectors_per_cluster from the cluster
+        int sectorsToRead = totalSectors - sectorsRead < fs->sectors_per_cluster ? 
+            totalSectors - sectorsRead : 
+            fs->sectors_per_cluster;
+        
+        sectorsRead += sd_readblock(cluster_to_lba(fs, id), 
+            buf + sectorsRead * BYTES_PER_SECTOR, 
+            sectorsToRead) / BYTES_PER_SECTOR; // sd_readblock returns bytes read, divide by BYTES_PER_SECTOR
+        
+        id = fs->fat[id];
+        if (fat32_fat_entry_type(id) == LAST_CLUSTER) { // At end of cluster chain
+            assert(sectorsRead == totalSectors);
+            break;
+        } else { // Trudge on
+            assert(sectorsRead < totalSectors);
+        }
+    }
+
+    // Old, simpler case: assume 1 sector file, read from the first cluster only
+    // sd_readblock(cluster_to_lba(fs, id), buf, 1);
+
+    f.data = (char *)buf;
 
     return f;
 }
@@ -97,7 +168,14 @@ void notmain() {
     // Part1
     //    1. adapt bzt's sd card driver.
     //    2. write: pi_sd_init(), pi_sd_read,  sec_read.
+    sd_init();
+    unsigned char *data = sec_read(0, 1); // Read at lba 0, 1 sector
+    printk("\n*** Part 1 ***\n\n> Last two bytes of block 0 should be 55aa: %x%x\n", 
+        data[BYTES_PER_SECTOR - 2], 
+        data[BYTES_PER_SECTOR - 1]);
 
+    printk("\n*** Part 2 ***\n\n");
+#define PART2
 #ifdef PART2
     // PART2:
     //    1. define the master boot record.
@@ -121,6 +199,8 @@ void notmain() {
     assert(fat32_partition_empty((uint8_t*)mbr->part_tab4));
 #endif
 
+    printk("\n*** Part 3 ***\n\n");
+#define PART3
 #ifdef PART3
     /*
         https://www.pjrc.com/tech/8051/ide/fat32.html
@@ -134,7 +214,7 @@ void notmain() {
     */
 
     fat32_boot_sec_t *b = 0;
-    unimplemented();
+    b = sec_read(p.lba_start, 1); // Check what p was in part 2
 
     fat32_volume_id_check(b);
     fat32_volume_id_print("boot sector", b);
@@ -156,14 +236,23 @@ void notmain() {
     struct fat32 fs = fat32_mk(p.lba_start, b);
 
     // read in the both copies of the FAT.
-
+    printk("\n> Finished making the fat32 struct. Now compare the sectors. \n\n");
     uint32_t *fat = 0, *fat2 = 0;
-    unimplemented();
+    fat = fs.fat;
+    fat2 = (uint32_t *)((char *)(fs.fat) + b->nsec_per_fat * BYTES_PER_SECTOR);
+    int n_bytes = b->nsec_per_fat * BYTES_PER_SECTOR;
+
+    // Try a rough alloc
+    // fat = sec_read(fs.fat_begin_lba, 100);
+    // fat2 = sec_read(fs.fat_begin_lba + b->nsec_per_fat, 100);
+    // int n_bytes = 100 * BYTES_PER_SECTOR;    
 
     // check that they are the same.
     assert(memcmp(fat, fat2, n_bytes) == 0);
 #endif
 
+    printk("\n*** Part 4 ***\n\n");
+#define PART4
 #ifdef PART4
     int type = fat32_fat_entry_type(fat[2]);
     printk("fat[2] = %x, type=%s\n", fat[2], fat32_fat_entry_type_str(type));
@@ -173,15 +262,15 @@ void notmain() {
     unsigned dir_lba = cluster_to_lba(&fs, b->first_cluster);
     printk("rood dir first cluster = %d\n", dir_lba);
 
+    assert (type == LAST_CLUSTER); // See fat32.h
 
-    // calculate the number of directory entries.
-    uint32_t dir_n = 0;
-    unimplemented();
+    // calculate the number of directory entries. Assume directory fits in a single cluster.
+    uint32_t dir_n = b->sec_per_cluster * NDIR_PER_SEC;
 
     // read in the directories.
-    uint32_t dir_nsecs = 0;
-    fat32_dir_t *dirs = 0;
-    unimplemented();
+    // dir_nsecs is the number of sectors to read to get all of the dirents
+    uint32_t dir_nsecs = b->sec_per_cluster;
+    fat32_dir_t *dirs = sec_read(fs.cluster_begin_lba, dir_nsecs);
 
     // this should just work.
     for(int i = 0; i < dir_n; ) {
@@ -203,6 +292,8 @@ void notmain() {
     }
 #endif
 
+    printk("\n*** Part 5 ***\n\n");
+#define PART5 1
 #ifdef PART5
     // this should succeed, and print the contents of config.
     dirent_t *e =dir_lookup(&pdir, "config.txt");
@@ -218,5 +309,20 @@ void notmain() {
     printk("---------------------------------------------------------\n");
 #endif
 
+    printk("\n*** Part 6 ***\n\n");
+    // We already have pdir from the 
+    dirent_t *ent =dir_lookup(&pdir, "hello-fixed.0x100000f0.bin");
+    assert(ent);
+    printk("FOUND: \t%s\t\t->\tcluster id=%x, type=%s, nbytes=%d\n", 
+            ent->name, ent->cluster_id, ent->is_dir_p?"dir":"file", ent->nbytes);
+    
+    printk("opening file...\n");
+    pi_file_t file = fat32_read_file(&fs, ent);
+    // Seems to be printing out okay.
+    // for(int i = 0; i < file.n_data; i++)
+    //     printk("%c", file.data[i]);
+    memcpy((void *)0x100000f0, file.data, file.n_data); // Trash the address where we'll mount the executable!
+    BRANCHTO(0x100000f0);
+    // Our program will come back here!
     clean_reboot();
 }
