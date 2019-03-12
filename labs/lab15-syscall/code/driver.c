@@ -185,6 +185,7 @@ void int_part1(void) {
 
     int test1 = *((int *)0x99999999999); // Test deref of unmapped region, remove the "- 4" to go straight to the boundary
     printk("heyo: %d\n", test1);
+    // Cool!
     
     swi_setup_stack(SWI_STACK_ADDR);
 
