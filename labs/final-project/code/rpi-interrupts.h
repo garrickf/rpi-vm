@@ -82,6 +82,6 @@ typedef void (*interrupt_t)(uint32_t pc, uint32_t *saved_regs);
 void int_set_handler(int t, interrupt_t handler);
 
 // copy vectors, clear interrupt state.
-void int_init(void);
+void interrupts_init(void);
 
 #endif 

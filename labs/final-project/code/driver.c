@@ -12,6 +12,7 @@
  */
 #include "bvec.h"
 
+// The environment struct seems to encode the information for an environment.
 typedef struct env {
     uint32_t pid,
              domain,
@@ -103,7 +104,7 @@ void cpsr_print_mode(unsigned cpsr_r) {
 }
 
 // you will call this with the pc of the SWI instruction, and the saved registers
-// in saved_regs.  r0 at offset 0, r1 at offset 1, etc.
+// in saved_regs. r0 at offset 0, r1 at offset 1, etc.
 void handle_swi(uint8_t sysno, uint32_t pc, uint32_t *saved_regs) {
     printk("sysno=%d\n", sysno);
     printk("\tcpsr =%x\n", cpsr_read());
@@ -142,7 +143,7 @@ int swi_asm3();
 
 // don't modify this: it should run fine when everything works.
 void int_part0(void) {
-    int_init();
+    interrupts_init();
     swi_setup_stack(SWI_STACK_ADDR);
 
     printk("about to do a SWI\n");
@@ -162,7 +163,7 @@ void int_part0(void) {
  * you shouldn't have to touch much of this code.
  */
 void int_part1(void) {
-    int_init();
+    interrupts_init();
     env_init();
     mmu_init();
     assert(cpsr_read_c() == SYS_MODE);
@@ -208,7 +209,7 @@ void int_part1(void) {
 
 void int_part2(void) {
     printk("PART 2\n");
-    int_init();
+    interrupts_init();
     env_init();
     mmu_init();
     assert(cpsr_read_c() == SYS_MODE);
@@ -281,25 +282,97 @@ void int_part2(void) {
     clean_reboot();
 }
 
-/**********************************************************************
- * implement part0, part1, part2.
- */
+#define ADDRESSES_PER_MB 0x100000
+
+void vm_tests() {
+    printk("=== Virtual Memory Tests ===");
+    env_init();
+    mmu_init();
+    assert(cpsr_read_c() == SYS_MODE);
+    env_t *e = env_alloc();
+
+#define VM_PART2 1
+
+#ifdef VM_PART1
+    printk("\n*** Test 1 ***\n\n");
+    printk("> Should be able to turn on and off VM.\n");
+
+    *((char *)0x400) = 42;
+
+    // Just map our section
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    assert(*((char *)0x400) == 42);
+    mmu_disable();
+    assert(!mmu_is_on());
+
+    printk("> End of test!\n");
+#endif
+
+#ifdef VM_PART2
+    printk("\n*** Test 2 ***\n\n");
+    printk("> Should be able to turn on VM, map a section, then access.\n");
+
+    unsigned part2_base = 0x100000;
+    *((char *)0x400) = 42;
+    *((char *)(part2_base + 0x400)) = 137;
+
+    // Just map our section
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    // Need to map GPIO for communication
+    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
+    // The stack grows downwards, so we allocate the section below it.
+    mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
+        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+    // kmalloc() allocates the page table here; should also be acessible in VM!
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    printk("> MMU turned on successfully.\n");
+
+    assert(*((char *)0x400) == 42);
+    // Should fault when uncommented
+    char c = *((char *)part2_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+
+    printk("> Mapping a section with VM enabled.\n");
+    mmu_map_section(e->pt, part2_base, part2_base)->domain = e->domain;
+    c = *((char *)part2_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+    assert(*((char *)(part2_base + 0x400)) == 137);
+    
+    mmu_disable();
+    assert(!mmu_is_on());
+
+    printk("> End of test!\n");
+#endif
+
+    env_free(e);
+}
+
+void syscall_tests() {
+    return;
+}
+
+// Main entry point for program
 void notmain() {
+    // Initialize UART, enable interrupts
     uart_init();
+    interrupts_init();
 
     // start the heap after the max stack address
-    kmalloc_set_start(MAX_STACK_ADDR); // Check it out!
+    kmalloc_set_start(MAX_STACK_ADDR);
 
     // implement swi interrupts without vm
-    int_part1();
-#if 0
-    // implement swi interrupts with vm
-    int_part1();
-#endif
+    // int_part1();
 
-#if 0
-    // part 2
-    int_part2();
-#endif
+    vm_tests();
+    syscall_tests();
+
     clean_reboot();
 }

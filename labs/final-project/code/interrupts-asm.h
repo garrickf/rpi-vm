@@ -10,6 +10,9 @@
 #define UNDEF_MODE      0b11011
 #define SYS_MODE         0b11111
 
+/* We can define some initial locations to host interrupt handler stacks.
+ * Each mapped section is currently 1MB (100 000 hex addresses) big, since
+ * the VM lets us map in 1MB chunks. */ 
 #define SYS_STACK_ADDR 0x100000 // Why am I accessing this
 #define SWI_STACK_ADDR 0x200000
 // general interrupts.

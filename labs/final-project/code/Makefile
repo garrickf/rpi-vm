@@ -1,8 +1,8 @@
 # makefile based on scott mcpeak's grad school page :)
-# 	http://scottmcpeak.com/autodepend/autodepend.html
+# http://scottmcpeak.com/autodepend/autodepend.html
 
-NAME=vm
-OBJS = driver.o  vm-asm.o  cp15-arm.o mmu.o bvec.o interrupts-c.o interrupts-asm.o
+NAME = vm
+OBJS = driver.o vm-asm.o cp15-arm.o mmu.o bvec.o interrupts-c.o interrupts-asm.o
 
 ifndef LIBPI_PATH
 $(error LIBPI_PATH is not set: this should contain the absolute path to where this directory is.  Define it in your shell's initialiation.  For example, .tcshrc for tcsh or .bashrc for bash)
@@ -11,7 +11,7 @@ endif
 # useful set of defines.
 include $(LIBPI_PATH)/includes.mk
 
-CPP_ASFLAGS =  -nostdlib -nostartfiles -ffreestanding   -Wa,--warn -Wa,--fatal-warnings -Wa,-mcpu=arm1176jzf-s -Wa,-march=armv6zk
+CPP_ASFLAGS = -nostdlib -nostartfiles -ffreestanding -Wa,--warn -Wa,--fatal-warnings -Wa,-mcpu=arm1176jzf-s -Wa,-march=armv6zk
 
 CFLAGS += -Wstack-usage=512 -Werror
 
@@ -19,7 +19,8 @@ CFLAGS += -Wstack-usage=512 -Werror
 
 CFLAGS += -Wno-unused-function
 
-all: libpi $(NAME).bin mktags run
+# all: libpi $(NAME).bin mktags run
+all: libpi $(NAME).bin run
 
 run:
 	my-install $(NAME).bin
@@ -28,6 +29,7 @@ run:
 libpi:
 	@make -C $(LIBPI_PATH)
 
+# Why are we generating ctags?
 mktags:
 	@rm -f tags
 	ctags *.[chsS] $(LIBPI_PATH)/*.[chsS]

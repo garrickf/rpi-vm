@@ -65,7 +65,7 @@ static void install_handlers(void) {
 
 #include "cp15-arm.h"
 
-void int_init(void) {
+void interrupts_init(void) {
     // BCM2835 manual, section 7.5: turn off all GPIO interrupts.
     PUT32(INTERRUPT_DISABLE_1, 0xffffffff);
     PUT32(INTERRUPT_DISABLE_2, 0xffffffff);
