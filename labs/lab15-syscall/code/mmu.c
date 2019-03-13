@@ -95,8 +95,8 @@ fld_t *mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa) {
     pte->XN = 0;
     pte->sec_base_addr = pa >> 20;
 
-    // fld_print(pte);
-    // printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
+    fld_print(pte);
+    printk("my.pte @ 0x%x = %b\n", pt, *(unsigned*)pte);
     return pte;
 }
 
