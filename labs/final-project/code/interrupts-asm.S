@@ -149,8 +149,20 @@ data_abort_asm:
   bl    data_abort_vector
   pop {r0, lr}
   sub   lr, lr, #4
-  movs  pc, lr              @ Continue on as if nothing happened
+  movs  pc, lr              @ Continue on as if nothing happened: see: failure oblivious coding
 interrupt_asm:
   sub   lr, lr, #4
   mov   sp, #INT_STACK_ADDR
   bl    interrupt_vector
+
+.globl get_data_fault_status_reg
+get_data_fault_status_reg:
+  @ Read CP15 register 5 (c5) to r0, opcode2 = 0 for the data FSR (p. B4-43)
+  mrc p15, 0, r0, c5, c0, 0 
+  bx lr 
+
+.globl get_fault_address_reg
+get_fault_address_reg:
+  @ Read CP15 register 5 (c6) to r0, opcode2 = 0 for the data FSR (p. B4-44)
+  mrc p15, 0, r0, c6, c0, 0 
+  bx lr 

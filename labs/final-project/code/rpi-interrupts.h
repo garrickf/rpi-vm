@@ -84,4 +84,14 @@ void int_set_handler(int t, interrupt_t handler);
 // copy vectors, clear interrupt state.
 void interrupts_init(void);
 
+// functions defined in the asm file, available to programs including this header
+unsigned get_data_fault_status_reg();
+unsigned get_fault_address_reg();
+
+int WIF_WRITE(unsigned faultval);
+int WIF_READ(unsigned faultval);
+int WFAULT_DOMAIN(unsigned faultval);
+int WFAULT_STATUS(unsigned faultval);
+char *fault_status_to_str(int fault_status);
+
 #endif 

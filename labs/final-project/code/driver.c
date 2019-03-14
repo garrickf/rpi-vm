@@ -340,6 +340,9 @@ void vm_tests() {
     char c = *((char *)part2_base + 0x400);
     printk("Accessing data... <%d>\n", c);
 
+    // A write access (should be)
+    PUT32(part2_base + 0x400, 12);
+
     printk("> Mapping a section with VM enabled.\n");
     mmu_map_section(e->pt, part2_base, part2_base)->domain = e->domain;
     c = *((char *)part2_base + 0x400);

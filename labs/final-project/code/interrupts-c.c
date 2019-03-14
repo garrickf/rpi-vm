@@ -28,6 +28,15 @@ void prefetch_abort_vector(unsigned pc) {
 }
 void data_abort_vector(unsigned pc) {
 	// UNHANDLED("data abort", pc); // panic will kill it?
+    unsigned faultval = get_data_fault_status_reg();
+    
+    if (WIF_READ(faultval)) printk("This access was a read access.\n");
+    else printk("This was a write access.\n");
+
+    printk("Domain\t %d\n", WFAULT_DOMAIN(faultval));
+    printk("Status\t %b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(WFAULT_STATUS(faultval)));
+    printk("Address\t %x\n", get_fault_address_reg());
+
     printk("ERROR: unhandled exception <data abort> at PC=%x\n", pc); // Should trudge on
 }
 
@@ -75,4 +84,23 @@ void interrupts_init(void) {
     // setup the interrupt vectors.
     install_handlers();
     int_intialized_p = 1;
+}
+
+// Helpers for extracting data from the data fault status register
+// (p. B4-43)
+int WIF_WRITE(unsigned faultval) { return faultval & (0b1 << 11); }
+int WIF_READ(unsigned faultval) { return !WIF_WRITE(faultval); }
+int WFAULT_DOMAIN(unsigned faultval) { return (faultval & (0b1111 << 4) >> 4 ); }
+int WFAULT_STATUS(unsigned faultval) { 
+    return (faultval & 0b111) // First three bits of the status
+        | (faultval & (0b1 << 10) >> 6); // The fourth bit
+}
+
+char *fault_status_to_str(int fault_status) {
+    switch (fault_status) {
+        case 0b00001: return "Alignment issue";
+        case 0b00101: return "Section translation | domain invalid | FAR valid";
+        // TODO: fill out the other cases
+    }
+    return "Unknown status";
 }
