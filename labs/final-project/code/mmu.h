@@ -80,6 +80,65 @@ typedef struct first_level_descriptor {
         sec_base_addr:12; // 20-31.  must be aligned.
 } fld_t;
 
+/*
+ * struct: first level descriptor for coarse page table
+ * ---
+ * First-level table entry containing metadata for a coarse page table. See p. B4-27 
+ * for the format, and p. B4-30 for information on how a second-level fetch is initiated
+ * by hardware after a first-level fetch retrieves a coarse page table descriptor.
+ */
+typedef struct coarse_page_table_descriptor {
+    unsigned
+        tag:    2,  // Should be 0b01, coarse page table
+        _sbz:   3,
+        domain: 4,
+        IMP:    1,
+        base:   22; // Base address of coarse page table
+} coarse_pt_desc_t;
+
+/*
+ * struct: second level descriptor for large page
+ * ---
+ * Second-level table entry for a large page (64KB). See p. B4-31 for the format and p. B4-33
+ * for the complete translation sequence for a large page in a coarse page table. Because the 
+ * low order four bits of the table index (how we index the coarse page table) and the upper 
+ * four bits of the page index overlap, each page table entry for a large page must be repeated
+ * 16 times consecutively; the page index, no matter what those upper four bits are, is referring 
+ * to the same page, despite those same four bits being part of the "key." In a sense, we are
+ * using the same hardware table walk and altering our table structure to match.
+ * 
+ * If large pages and small pages begin to mix in a coarse table, having large pages occupy multiple
+ * spots reserved for small pages will also help with collisions.
+ */
+typedef struct large_page_descriptor {
+    unsigned
+        tag:    2,  // Should be 0b01, large page
+        B:      1,
+        C:      1,
+        AP:     2,
+        _sbz:   3,
+        APX:    1,
+        S:      1,
+        nG:     1,
+        TEX:    3,
+        XN:     1,
+        base:   16; // 16 bits in base leave 16 bits to address ~64KB of memory
+} lg_page_desc_t;
+
+typedef struct small_page_descriptor {
+    unsigned
+        XN:     1,
+        tag:    1,  // Should be 0b1(1|0), small page
+        B:      1,
+        C:      1,
+        AP:     2,
+        TEX:    3,
+        APX:    1,
+        S:      1,
+        nG:     1,
+        base:   20; // 20 bits in base leave 12 bits to address ~4KB of memory
+} sm_page_desc_t;
+
 // helpers to enable caching / write buffer on a section by section basis. note:
 // you must turn on the associated cp15 bits.  
 //

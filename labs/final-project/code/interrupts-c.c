@@ -35,7 +35,7 @@ void data_abort_vector(unsigned pc) {
 
     printk("Domain\t %d\n", WFAULT_DOMAIN(faultval));
     printk("Status\t %b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(WFAULT_STATUS(faultval)));
-    printk("Address\t %x\n", get_fault_address_reg());
+    printk("Address\t 0x%x\n", get_fault_address_reg());
 
     printk("ERROR: unhandled exception <data abort> at PC=%x\n", pc); // Should trudge on
 }
