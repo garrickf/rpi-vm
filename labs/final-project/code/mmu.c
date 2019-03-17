@@ -55,6 +55,7 @@ void fld_print(fld_t *f) {
     printk("------------------------------\n");
     printk("0x%x:\n", f);
     print_field(f, sec_base_addr);
+        printk("full base:=0x%8x\n", f->sec_base_addr);
     printk("\t  --> va=0x%8x\n", f->sec_base_addr<<20);
     printk("\t           76543210\n");
 
@@ -73,6 +74,28 @@ void fld_print(fld_t *f) {
     fld_check_valid(f);
 }
 
+// Debug function that prints out all the fields of the small page page entry.
+void sm_page_desc_print (sm_page_desc_t *pte) {
+    printk("------------------------------\n");
+    printk("0x%x:\n", pte);
+    print_field(pte, base);
+    printk("full base:=0x%8x\n", pte->base);
+    printk("\t  --> va=0x%8x\n", pte->base << 12);
+    printk("\t      bit: 76543210\n");
+
+    print_field(pte, nG);
+    print_field(pte, S);
+    print_field(pte, APX);
+    print_field(pte, TEX);
+    print_field(pte, AP);
+    print_field(pte, C);
+    print_field(pte, B);
+    print_field(pte, tag);
+
+    // fld_check_valid(f);
+}
+
+// Lookup first level descriptor. Shifting by 20 works because the index starts at bit 20, and 4 bits are skipped at a time via indexing
 fld_t *mmu_lookup(fld_t *pt, uint32_t va) {
     assert(is_aligned(va, 20));
     return &pt[va>>20];
@@ -95,8 +118,8 @@ fld_t *mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa) {
     pte->XN = 0;
     pte->sec_base_addr = pa >> 20;
 
-    // fld_print(pte);
-    // printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
+    fld_print(pte);
+    printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
     return pte;
 }
 
@@ -188,4 +211,140 @@ void mmu_enable(void) {
     assert(!c.MMU_enabled);
     c.MMU_enabled = 1;
     mmu_enable_set(c);
+}
+
+// Functions for creating a new small page
+#define COARSE_PAGE_TABLE_TAG 0b01
+#define SECTION_TAG 0b10
+#define UNUSED_TAG 0b00
+
+// Make a coarse page table.
+fld_t mk_coarse_page_table() {
+    // Coarse page tables are 1KB in size, with 256 4-byte (32-bit) entries. (Mapping out an entire 1MB section).
+    // They have to be 10-bit aligned for the translation base, which is 22 bits
+    fld_t *pt = kmalloc_aligned(256 * 4, 0b1<<10); // kmalloc() sets to 0, mind!
+    printk("coarse pt made at address %x\n", pt); // Test the address, where is it?
+    AssertNow(sizeof *pt == 4);
+    
+    fld_t f; // The actual fld to return
+    memset(&f, 0, sizeof(fld_t)); // Unused fields can have 0 as default
+
+    coarse_pt_desc_t *entry = (coarse_pt_desc_t *)&f; // Cast + indirection to do some work
+    entry->tag = 1;
+    entry->base = (unsigned)pt >> 10; // Take upper 22 bits (IMPORTANT)
+    // TODO: set domain
+    printk("coarse_pt_desc_t->base is set to %x\n", entry->base); // Test the address, where is it?
+    // assert(f.tag == COARSE_PAGE_TABLE_TAG);
+    return f;
+}
+
+/* Virtual address to key/index functions */
+
+// From physical address, get 8-bit second-level table index, bits [19:12]. See pg. B4-33
+uint32_t get_second_level_table_idx(uint32_t va) {
+    return (va >> 12) & 0xFF; // 0xFF = 8 0b1's
+}
+
+// From physical address, get 12-bit small page index, bits [11:0]. See pg. B4-31
+uint32_t get_sm_page_idx(uint32_t va) {
+    return va & 0xFFF; // 12 0b1's
+}
+
+// From physical address, get 16-bit large page index, bits [15:0]. See pg. B4-31
+uint32_t get_lg_page_idx(uint32_t va) {
+    return va & 0xFFFF; // 16 0b1's
+}
+
+// Retrieve the second level descriptor/page table entry associated with the page directory entry, offset 
+// by the second-level table index portion of the virtual address.
+void *mmu_second_level_lookup(void *pde, uint32_t va) {
+    // Create a pointer to the start of the coarse page table
+    sld_t *cpt = (sld_t *)(((coarse_pt_desc_t *)pde)->base << 10); // TODO: define 10 offset
+    return &cpt[get_second_level_table_idx(va)];
+}
+
+#define SMALL_PAGE_TAG 0b1
+
+// Create and return a small page page table entry.
+sm_page_desc_t mk_sm_page() {
+    sm_page_desc_t pte;
+    memset(&pte, 0, sizeof(sm_page_desc_t));
+    pte.tag = SMALL_PAGE_TAG; // The tag is set as a 1-bit field and read as a 2-bit one, pg. B4-31
+    return pte;
+}
+
+/*
+ * function: map a small page in virtual memory
+ * ---
+ * Maps a small (4KB) page in VM. 
+ * 
+ * @param pt: The page table
+ * @param va: The virtual address to be mapped
+ * @param pa: The physical address to map to
+ */
+sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa) {
+    printk("Welcome to my small mapper!\n");
+
+    // Small pages map out 2^12 bytes (4KB) of memory. Make sure addresses are aligned.
+    assert(is_aligned(va, 12));
+    assert(is_aligned(pa, 12));
+
+    // First-level descriptor/page directory entry
+    fld_t *pde = mmu_lookup(pt, va); // Get fld
+
+    assert(pde->tag == UNUSED_TAG || pde->tag == COARSE_PAGE_TABLE_TAG);
+
+    // If fld is unused, allocate a coarse table
+    if (pde->tag == UNUSED_TAG) {
+        *pde = mk_coarse_page_table();
+        printk("my pde @ 0x%x = %b\n", pde, *(unsigned*)pde);
+        // return (sld_t *)pde;
+        // Note: making a normal section works okay...
+        // *pde = fld_mk();
+        // pde->sec_base_addr = pa >> 20;
+        // return (sld_t *)pde;
+    }
+
+    // Navigate to small page entry; make small page entry
+    sm_page_desc_t *pte = mmu_second_level_lookup(pde, va);
+    
+    assert(pte->tag == UNUSED_TAG);
+    *pte = mk_sm_page();
+
+    pte->nG = 0;
+    pte->APX = 0;
+    pte->TEX = 0; 
+    pte->AP = 0b11;
+    pte->XN = 0;
+    pte->base = pa >> 12; // Base address is upper 20 bits
+
+    // TODO: make a print pte function
+    sm_page_desc_print(pte);
+    // fld_print(pte);
+    // printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
+
+    return (sld_t *)pte;
+}
+
+#define MMUTABLEBASE 0x304000
+unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase )
+{
+    unsigned int ra;
+    unsigned int rb;
+    unsigned int rc;
+
+    ra=vadd>>20;
+    rb=MMUTABLEBASE|(ra<<2);
+    rc=(mmubase&0xFFFFFC00)/*|(domain<<5)*/|1;
+    //hexstrings(rb); hexstring(rc);
+    PUT32(rb,rc); //first level descriptor
+    coarse_pt_desc_t *p = (coarse_pt_desc_t *)rb;
+    printk("field: 0x%x\n", p->base);
+    printk("my.pte @ 0x%x = %b\n", rb, rc);
+    // ra=(vadd>>12)&0xFF;
+    // rb=(mmubase&0xFFFFFC00)|(ra<<2);
+    // rc=(padd&0xFFFFF000)|(0xFF0)|flags|2;
+    // //hexstrings(rb); hexstring(rc);
+    // PUT32(rb,rc); //second level descriptor
+    return(0);
 }

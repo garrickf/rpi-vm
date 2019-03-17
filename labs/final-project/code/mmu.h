@@ -139,6 +139,13 @@ typedef struct small_page_descriptor {
         base:   20; // 20 bits in base leave 12 bits to address ~4KB of memory
 } sm_page_desc_t;
 
+typedef struct second_level_descriptor {
+    unsigned
+        tag0:   1,  // The first bit is 1 in large pages and XN in small pages
+        tag1:   1,  // The second bit is 0 in large pages and 1 in small pages (use this to distinguish)
+        data:   30;
+} sld_t;
+
 // helpers to enable caching / write buffer on a section by section basis. note:
 // you must turn on the associated cp15 bits.  
 //
@@ -180,6 +187,11 @@ void mmu_reset(void);
 // turn on/off all caches.  should break this down a bit.
 void mmu_all_cache_on(void);
 void mmu_all_cache_off(void);
+
+fld_t mk_coarse_page_table();
+sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa);
+
+unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase );
 
 #if 0
 // same as disable/enable except client gives the control reg to use --- 

@@ -45,7 +45,7 @@ env_t *env_alloc(void) {
 
     // default: can override.
     e->domain_reg = 0b01 << e->domain*2;
-
+    printk("env domain: %d\n", e->domain);
     return e;
 }
 void env_free(env_t *e) {
@@ -284,6 +284,7 @@ void int_part2(void) {
 
 #define ADDRESSES_PER_MB 0x100000
 
+// VM tests to run.
 void vm_tests() {
     printk("=== Virtual Memory Tests ===");
     env_init();
@@ -291,7 +292,8 @@ void vm_tests() {
     assert(cpsr_read_c() == SYS_MODE);
     env_t *e = env_alloc();
 
-#define VM_PART2 1
+// Define a section to decide which test to run.
+#define VM_PART3 1
 
 #ifdef VM_PART1
     printk("\n*** Test 1 ***\n\n");
@@ -348,6 +350,48 @@ void vm_tests() {
     c = *((char *)part2_base + 0x400);
     printk("Accessing data... <%d>\n", c);
     assert(*((char *)(part2_base + 0x400)) == 137);
+    
+    mmu_disable();
+    assert(!mmu_is_on());
+
+    printk("> End of test!\n");
+#endif
+
+#ifdef VM_PART3
+    printk("\n*** Test 3 ***\n\n");
+    printk("> Should be able to allocate small pages.\n");
+
+    unsigned part3_base = 0x100000;
+    *((char *)(part3_base + 0x400)) = 125;
+
+    // Just map our section
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    // Need to map GPIO for communication
+    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
+    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
+    // The stack grows downwards, so we allocate the section below it.
+    mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
+        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+    // kmalloc() allocates the page table here; should also be acessible in VM!
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    printk("> MMU turned on successfully.\n");
+
+    // Should fault when uncommented
+    char c = *((char *)part3_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+
+    printk("> Mapping a small page with VM enabled.\n");
+    mmu_map_sm_page(e->pt, part3_base, part3_base); // TODO: Add domain
+
+    c = *((char *)part3_base + 0x400);
+    c = *((char *)part3_base + 0x1000 - 4); // Should cause a fault for small page...
+    printk("Accessing data... <%d>\n", c);
+    assert(*((char *)(part3_base + 0x400)) == 125);
     
     mmu_disable();
     assert(!mmu_is_on());
