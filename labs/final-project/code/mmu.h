@@ -188,8 +188,12 @@ void mmu_reset(void);
 void mmu_all_cache_on(void);
 void mmu_all_cache_off(void);
 
+// Making coarse page tables
 fld_t mk_coarse_page_table();
+
+// Mapping small and large pages
 sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa);
+sld_t *mmu_map_lg_page(fld_t *pt, uint32_t va, uint32_t pa);
 
 unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase );
 

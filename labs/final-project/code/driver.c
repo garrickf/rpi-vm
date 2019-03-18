@@ -59,9 +59,10 @@ void env_free(env_t *e) {
     // not sure how to free pt.  ugh.
 }
 
+// GF: seems to have appropriate domain switching here...why our domain reg, then ~0UL? accounting for idea that we're not handling domains yet?
 void env_switch_to(env_t *e) {
     cp15_domain_ctrl_wr(e->domain_reg);
-    cp15_domain_ctrl_wr(~0UL);
+    cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
 
     cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt);
 
@@ -286,16 +287,22 @@ void int_part2(void) {
 
 // VM tests to run.
 void vm_tests() {
-    printk("=== Virtual Memory Tests ===");
+    printk("============================\n");
+    printk("=== Virtual Memory Tests ===\n");
+    printk("============================\n");
     env_init();
     mmu_init();
     assert(cpsr_read_c() == SYS_MODE);
     env_t *e = env_alloc();
 
 // Define a section to decide which test to run.
-#define VM_PART3 1
+#define VM_PART1 0
+#define VM_PART2 0
+#define VM_PART3 0
+#define VM_PART4 1
+#define VM_PART5 0
 
-#ifdef VM_PART1
+#if VM_PART1 == 1
     printk("\n*** Test 1 ***\n\n");
     printk("> Should be able to turn on and off VM.\n");
 
@@ -313,7 +320,7 @@ void vm_tests() {
     printk("> End of test!\n");
 #endif
 
-#ifdef VM_PART2
+#if VM_PART2 == 1
     printk("\n*** Test 2 ***\n\n");
     printk("> Should be able to turn on VM, map a section, then access.\n");
 
@@ -357,7 +364,7 @@ void vm_tests() {
     printk("> End of test!\n");
 #endif
 
-#ifdef VM_PART3
+#if VM_PART3 == 1
     printk("\n*** Test 3 ***\n\n");
     printk("> Should be able to allocate small pages.\n");
 
@@ -389,9 +396,104 @@ void vm_tests() {
     mmu_map_sm_page(e->pt, part3_base, part3_base); // TODO: Add domain
 
     c = *((char *)part3_base + 0x400);
-    c = *((char *)part3_base + 0x1000 - 4); // Should cause a fault for small page...
+    // c = *((char *)part3_base + 0x1000 - 4); // This is right on the boundary of the small page
+    // c = *((char *)part3_base + 0x1000); // Should cause a fault for small page...
     printk("Accessing data... <%d>\n", c);
     assert(*((char *)(part3_base + 0x400)) == 125);
+    
+    mmu_disable();
+    assert(!mmu_is_on());
+
+    printk("> End of test!\n");
+#endif
+
+#if VM_PART4 == 1
+    printk("\n*** Test 4 ***\n\n");
+    printk("> Should be able to allocate large pages.\n");
+
+    unsigned part4_base = 0x100000;
+    *((char *)(part4_base + 0x400)) = 66;
+    *((char *)part4_base + 0x10000 - 4) = 137;
+
+    // Just map our section
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    // Need to map GPIO for communication
+    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
+    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
+    // The stack grows downwards, so we allocate the section below it.
+    mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
+        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+    // kmalloc() allocates the page table here; should also be acessible in VM!
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    printk("> MMU turned on successfully.\n");
+
+    // Should fault when uncommented
+    char c = *((char *)part4_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+
+    printk("> Mapping a small page with VM enabled.\n");
+    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain
+
+    c = *((char *)part4_base + 0x400);
+    c = *((char *)part4_base + 0x10000 - 4); // This is right on the boundary of the large page
+    // c = *((char *)part4_base + 0x10000); // Should cause a fault for large page...
+    printk("Accessing data... <%d>\n", c);
+    assert(*((char *)(part4_base + 0x400)) == 66);
+    assert(*((char *)(part4_base + 0x10000 - 4)) == 137);
+    
+    mmu_disable();
+    assert(!mmu_is_on());
+
+    printk("> End of test!\n");
+#endif
+
+// Test 5
+#if VM_PART5 == 1
+    printk("\n*** Test 5 ***\n\n");
+    printk("> Dereferencing nullptr should yield an error.\n");
+
+    unsigned part5_base = 0x100000;
+    *((char *)(part5_base + 0x400)) = 21;
+    
+    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    // Need to map GPIO for communication
+    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
+    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
+    // The stack grows downwards, so we allocate the section below it.
+    mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
+        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+    // kmalloc() allocates the page table here; should also be acessible in VM!
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    printk("> MMU turned on successfully.\n");
+
+    // Should fault when uncommented, should go to interrupt table at PA 0x0
+    char c = *((char *)part5_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+
+    printk("> Mapping a small page with VM enabled.\n");
+    mmu_map_lg_page(e->pt, part5_base, part5_base); // TODO: Add domain
+
+    c = *((char *)part5_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+    assert(*((char *)(part5_base + 0x400)) == 21);
+
+    // TODO: Swap domain to client
+
+    cpsr_print_mode(cpsr_read_c()); // We ought to be in sys mode
+
+    // What if we dereference nullptr itself? (We may be in system mode)
+    c = *((char *)0x0);
+    printk("Accessing data... <%d>\n", c);
     
     mmu_disable();
     assert(!mmu_is_on());

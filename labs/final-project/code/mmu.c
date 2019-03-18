@@ -77,9 +77,9 @@ void fld_print(fld_t *f) {
 // Debug function that prints out all the fields of the small page page entry.
 void sm_page_desc_print (sm_page_desc_t *pte) {
     printk("------------------------------\n");
-    printk("0x%x:\n", pte);
+    printk("PTE (sm. page) @ 0x%x = [binary] %b\n", pte, *(unsigned*)pte);
+    // printk("0x%x:\n", pte);
     print_field(pte, base);
-    printk("full base:=0x%8x\n", pte->base);
     printk("\t  --> va=0x%8x\n", pte->base << 12);
     printk("\t      bit: 76543210\n");
 
@@ -87,6 +87,27 @@ void sm_page_desc_print (sm_page_desc_t *pte) {
     print_field(pte, S);
     print_field(pte, APX);
     print_field(pte, TEX);
+    print_field(pte, AP);
+    print_field(pte, C);
+    print_field(pte, B);
+    print_field(pte, tag);
+
+    // fld_check_valid(f);
+}
+
+// Debug function that prints out all the fields of the large page entry.
+void lg_page_desc_print (lg_page_desc_t *pte) {
+    printk("------------------------------\n");
+    printk("PTE (lg. page) @ 0x%x = [binary] %b\n", pte, *(unsigned*)pte);
+    print_field(pte, base);
+    printk("translates to --> va=0x%8x\n", pte->base << 16);
+    printk("                  bit: 76543210\n");
+
+    print_field(pte, XN);
+    print_field(pte, TEX);
+    print_field(pte, nG);
+    print_field(pte, S);
+    print_field(pte, APX);
     print_field(pte, AP);
     print_field(pte, C);
     print_field(pte, B);
@@ -232,6 +253,7 @@ fld_t mk_coarse_page_table() {
     coarse_pt_desc_t *entry = (coarse_pt_desc_t *)&f; // Cast + indirection to do some work
     entry->tag = 1;
     entry->base = (unsigned)pt >> 10; // Take upper 22 bits (IMPORTANT)
+    // entry->domain = 1;
     // TODO: set domain
     printk("coarse_pt_desc_t->base is set to %x\n", entry->base); // Test the address, where is it?
     // assert(f.tag == COARSE_PAGE_TABLE_TAG);
@@ -240,19 +262,31 @@ fld_t mk_coarse_page_table() {
 
 /* Virtual address to key/index functions */
 
-// From physical address, get 8-bit second-level table index, bits [19:12]. See pg. B4-33
+// From virtual address, get 12-bit large page index, bits [31:20]. See pg. B4-33
+uint32_t get_first_level_table_idx(uint32_t va) {
+    return va >> 20;
+}
+
+// From virtual address, get 8-bit second-level table index, bits [19:12]. See pg. B4-33
 uint32_t get_second_level_table_idx(uint32_t va) {
     return (va >> 12) & 0xFF; // 0xFF = 8 0b1's
 }
 
-// From physical address, get 12-bit small page index, bits [11:0]. See pg. B4-31
+// From virtual address, get 12-bit small page index, bits [11:0]. See pg. B4-31
 uint32_t get_sm_page_idx(uint32_t va) {
     return va & 0xFFF; // 12 0b1's
 }
 
-// From physical address, get 16-bit large page index, bits [15:0]. See pg. B4-31
+// From virtual address, get 16-bit large page index, bits [15:0]. See pg. B4-31
 uint32_t get_lg_page_idx(uint32_t va) {
     return va & 0xFFFF; // 16 0b1's
+}
+
+// Lookup first level descriptor. 
+// We use the first_level_table_idx to directly index the array (skipping over by 
+// sizeof(fld_t) = 4 bytes each index).
+fld_t *mmu_first_level_lookup(fld_t *pt, uint32_t va) {
+    return &pt[get_first_level_table_idx(va)];
 }
 
 // Retrieve the second level descriptor/page table entry associated with the page directory entry, offset 
@@ -263,13 +297,25 @@ void *mmu_second_level_lookup(void *pde, uint32_t va) {
     return &cpt[get_second_level_table_idx(va)];
 }
 
-#define SMALL_PAGE_TAG 0b1
+#define SMALL_PAGE_BIT_1 0b1
+#define LARGE_PAGE_BIT_1 0b0
 
-// Create and return a small page page table entry.
+#define LARGE_PAGE_TAG 0b1
+
+// Create and return a small page table entry.
 sm_page_desc_t mk_sm_page() {
     sm_page_desc_t pte;
     memset(&pte, 0, sizeof(sm_page_desc_t));
-    pte.tag = SMALL_PAGE_TAG; // The tag is set as a 1-bit field and read as a 2-bit one, pg. B4-31
+    // The tag is set as a 1-bit field and read as a 2-bit one, pg. B4-31
+    pte.tag = SMALL_PAGE_BIT_1; 
+    return pte;
+}
+
+// Create and return a large page table entry.
+lg_page_desc_t mk_lg_page() {
+    lg_page_desc_t pte;
+    memset(&pte, 0, sizeof(lg_page_desc_t));
+    pte.tag = LARGE_PAGE_TAG;
     return pte;
 }
 
@@ -281,6 +327,7 @@ sm_page_desc_t mk_sm_page() {
  * @param pt: The page table
  * @param va: The virtual address to be mapped
  * @param pa: The physical address to map to
+ * @return: A generic second-level descriptor (sld_t *); the small page table entry
  */
 sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa) {
     printk("Welcome to my small mapper!\n");
@@ -290,7 +337,7 @@ sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa) {
     assert(is_aligned(pa, 12));
 
     // First-level descriptor/page directory entry
-    fld_t *pde = mmu_lookup(pt, va); // Get fld
+    fld_t *pde = mmu_first_level_lookup(pt, va);
 
     assert(pde->tag == UNUSED_TAG || pde->tag == COARSE_PAGE_TABLE_TAG);
 
@@ -322,6 +369,64 @@ sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa) {
     sm_page_desc_print(pte);
     // fld_print(pte);
     // printk("my.pte@ 0x%x = %b\n", pt, *(unsigned*)pte);
+
+    return (sld_t *)pte;
+}
+
+// Large pages need to be replicated 16 times, and there are 256 entries in a coarse page table.
+// We shouldn't allocate a large page at cpt[256 - 16 = 240] onwards, or we'll bleed past the end.
+#define MAX_LARGE_PAGE_IDX 240
+
+/*
+ * function: map a large page in virtual memory
+ * ---
+ * Maps a large (64KB) page in VM. Large pages are replicated 16x in a coarse page 
+ * table for the hardware lookup (see pg. B4-31, the low order bits of the second-level
+ * table index overlap with the page index, so we want any variation of those bits to
+ * correspond with a single large page entry).
+ * 
+ * @param pt: The page table
+ * @param va: The virtual address to be mapped
+ * @param pa: The physical address to map to
+ * @return: A generic second-level descriptor (sld_t *); the large page table entry
+ */
+sld_t *mmu_map_lg_page(fld_t *pt, uint32_t va, uint32_t pa) {
+    // Large pages map out 2^16 bytes (16KB) of memory. Make sure addresses are aligned.
+    assert(is_aligned(va, 16));
+    assert(is_aligned(pa, 16));
+
+    // Avoid allocating large pages towards the end of a coarse page table. A compromise;
+    // could track large pages that bleed across multiple coarse page tables if we wanted.
+    assert(get_second_level_table_idx(va) < MAX_LARGE_PAGE_IDX);
+
+    // Grab the first-level descriptor/page directory entry (PDE)
+    fld_t *pde = mmu_first_level_lookup(pt, va);
+
+    assert(pde->tag == UNUSED_TAG || pde->tag == COARSE_PAGE_TABLE_TAG);
+
+    // If fld is unused, allocate a coarse table
+    if (pde->tag == UNUSED_TAG) {
+        *pde = mk_coarse_page_table();
+        // printk("my pde @ 0x%x = %b\n", pde, *(unsigned*)pde);
+    }
+
+    // Navigate to small page entry; make small page entry
+    lg_page_desc_t *pte = mmu_second_level_lookup(pde, va);
+    
+    for (int i = 0; i < 16; i++) assert(pte[i].tag == UNUSED_TAG);
+    for (int i = 0; i < 16; i++) {
+        pte[i] = mk_lg_page();
+
+        pte[i].XN = 0;
+        pte[i].TEX = 0; 
+        pte[i].nG = 0;
+        pte[i].S = 0;
+        pte[i].APX = 0;
+        pte[i].AP = 0b11;
+        pte[i].base = pa >> 16; // Base address is upper 16 bits
+    }
+
+    lg_page_desc_print(pte);
 
     return (sld_t *)pte;
 }
