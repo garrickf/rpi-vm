@@ -1,4 +1,5 @@
-# NAME = blink
+# We're using a modified libpi: full link here (replace with your own!)
+LIBPI_PATH = /Users/garrick/code/cs140e/final-project/libpi-mine/
 
 PI = $(LIBPI_PATH)
 include $(PI)/includes.mk
@@ -6,8 +7,6 @@ include $(PI)/includes.mk
 ifndef NAME
 $(error NAME is not set: this should be the name of the binary you want to build)
 endif
-
-
 
 SRC = $(NAME).c 
 OBJS = $(SRC:.c=.o)

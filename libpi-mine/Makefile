@@ -34,9 +34,8 @@ TARGET = libpi.a
 # defines CC, etc.
 include includes.mk
 
-ifndef LIBPI_PATH
-$(error LIBPI_PATH is not set: this should contain the absolute path to where this directory is.  Define it in your shell's initialiation.  For example, .tcshrc for tcsh or .bashrc for bash)
-endif
+# We're using a modified libpi: full link here (replace with your own!)
+LIBPI_PATH = /Users/garrick/code/cs140e/final-project/libpi-mine/
 
 LIB_OBJS := $(SRC:.c=.o)
 LIB_OBJS := $(LIB_OBJS:.s=.o)

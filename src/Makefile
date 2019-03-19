@@ -1,16 +1,18 @@
 # Makefile for project, kitbashed together from previous labs :)
 # See: http://scottmcpeak.com/autodepend/autodepend.html for more info
 
+# Define the name of the executable and the object files that need to linked to create it.
 NAME = pi-vm
 OBJS = driver.o vm-asm.o cp15-arm.o mmu.o bvec.o interrupts-c.o interrupts-asm.o
 
-LIBPI_PATH = /Users/garrick/code/cs140e/final-project/libpi-mine
+# We're using a modified libpi: full link here (replace with your own!)
+LIBPI_PATH = /Users/garrick/code/cs140e/final-project/libpi-mine/
 
-# useful set of defines.
+# Pull in useful set of defines
 include $(LIBPI_PATH)/includes.mk
 
+# Compile flags
 CPP_ASFLAGS = -nostdlib -nostartfiles -ffreestanding -Wa,--warn -Wa,--fatal-warnings -Wa,-mcpu=arm1176jzf-s -Wa,-march=armv6zk
-
 CFLAGS += -Wstack-usage=512 -Werror
 
 # -marm_prefer_ldrd_strd
@@ -63,6 +65,6 @@ $(NAME).bin: memmap $(OBJS) vm-start.o
 .S.o: 
 	$(CC) -c $(CPP_ASFLAGS) $< -o $@
 
-# remove compilation products
+# Remove all compilation products
 clean:
 	rm -f replay *.o *.d *.bin *.elf *.list *.img Makefile.bak *~ tags
