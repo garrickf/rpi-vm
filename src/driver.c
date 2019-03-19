@@ -1,11 +1,15 @@
 /*
-   build a simple system call framework: look at int_part0 and int_part1.
-*/
+ * rpi-vm: Implementing VM on an rpi
+ * ---
+ * Author: Garrick Fernandez
+ * Sources: ARMv6 reference manual, CS140E (Dawson and Holly), dwelch67/bare-metal-pi
+ */
 #include "rpi.h"
 #include "cp15-arm.h"
 #include "mmu.h"
 #include "interrupts-asm.h"
 #include "rpi-interrupts.h"
+#include "memmap-constants.h"
 
 /****************************************************************************************
  * helper code to help set up address space environment.
@@ -63,7 +67,7 @@ void env_free(env_t *e) {
 // GF: seems to have appropriate domain switching here...why our domain reg, then ~0UL? accounting for idea that we're not handling domains yet?
 void env_switch_to(env_t *e) {
     cp15_domain_ctrl_wr(e->domain_reg);
-    // cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
+    cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
 
     cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt); // Ch. B2
 
@@ -84,7 +88,7 @@ void env_switch_to(env_t *e) {
  * your code
  */
 
-unsigned cpsr_read(void); // Define in asm?
+unsigned cpsr_read(void); // Defined in asm
 
 unsigned cpsr_read_c(void) { 
     return cpsr_read() & 0b11111; 
@@ -284,8 +288,6 @@ void int_part2(void) {
     clean_reboot();
 }
 
-#define ADDRESSES_PER_MB 0x100000
-
 // VM tests to run.
 void vm_tests() {
     printk("============================\n");
@@ -441,8 +443,12 @@ void vm_tests() {
     c = *((char *)&c);
     printk("Accessing data... <%d>\n", c);
 
-    printk("> Mapping a small page with VM enabled.\n");
-    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain
+    
+
+    printk("> Mapping a large page with VM enabled.\n");
+    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
+
+    // cp15_domain_ctrl_wr(~0UL); // Seems okay to write to CP15 while VM is on!
 
     c = *((char *)part4_base + 0x400);
     c = *((char *)part4_base + 0x10000 - 4); // This is right on the boundary of the large page
@@ -524,6 +530,8 @@ void notmain() {
 
     // implement swi interrupts without vm
     // int_part1();
+
+    cpsr_print_mode(cpsr_read());
 
     vm_tests();
     syscall_tests();

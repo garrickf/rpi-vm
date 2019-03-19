@@ -8,18 +8,12 @@
 #define SUPER_MODE      0b10011
 #define ABORT_MODE      0b10111
 #define UNDEF_MODE      0b11011
-#define SYS_MODE         0b11111
+#define SYS_MODE        0b11111
 
-/* We can define some initial locations to host interrupt handler stacks.
- * Each mapped section is currently 1MB (100 000 hex addresses) big, since
- * the VM lets us map in 1MB chunks. */ 
-#define SYS_STACK_ADDR 0x100000 // Why am I accessing this
-#define SWI_STACK_ADDR 0x200000
-// general interrupts.
-#define INT_STACK_ADDR 0x300000
+/* Functions defined in asm */
+unsigned cpsr_read(void);
 
-#define MAX_ADDR       0x400000
-
-#define MAX_STACK_ADDR  INT_STACK_ADDR
+/* Helper defined in driver.c */
+void cpsr_print_mode(unsigned cpsr_r);
 
 #endif

@@ -11,15 +11,20 @@ union align {
 
 
 extern char __heap_start__;
-static char *heap = &__heap_start__;
+static char *heap = &__heap_start__; // Current pointer/end
+static char *heap_start = &__heap_start__;
 
 void *kmalloc_heap_end(void) { return heap; }
-void *kmalloc_heap_start(void) { return &__heap_start__; }
+void *kmalloc_heap_original_start(void) { return &__heap_start__; }
+void *kmalloc_heap_start(void) { return heap_start; }
 
+// Given _addr, set up heap to start at position otherwise not specified 
+// by linker file
 void kmalloc_set_start(unsigned _addr) {
     char *addr = (void*)_addr;
-    assert(addr > heap);
+    // assert(addr > heap); // Assert heap can only be placed higher
     heap = addr;
+    heap_start = heap; // Keep track of the new start
 }
 
 void *kmalloc(unsigned sz) {
@@ -48,6 +53,9 @@ void *kmalloc_aligned(unsigned nbytes, unsigned alignment) {
 }
 
 void kfree(void *p) { }
-void kfree_all(void) { heap = &__heap_start__; }
+void kfree_all(void) { 
+    heap = &__heap_start__; 
+    heap_start = heap;
+}
 void kfree_after(void *p) { heap = p; }
 

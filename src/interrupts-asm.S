@@ -7,6 +7,7 @@
 
 #include "arm-coprocessor-insts.h"
 #include "interrupts-asm.h"
+#include "memmap-constants.h"
 
 /*
  * Enable/disable interrupts.

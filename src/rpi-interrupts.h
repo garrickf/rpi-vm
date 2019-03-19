@@ -98,4 +98,7 @@ int fault_status_has_valid_far(unsigned faultval);
 
 void printDataAbort(unsigned pc);
 
+// function for handling page miss
+void handle_page_miss(unsigned address);
+
 #endif 
