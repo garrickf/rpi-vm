@@ -44,8 +44,8 @@ env_t *env_alloc(void) {
     e->asid = bvec_alloc(&asid_v);
 
     // default: can override.
-    e->domain_reg = 0b01 << e->domain*2;
-    printk("env domain: %d\n", e->domain);
+    e->domain_reg = 0b01 << e->domain*2; // Determine the register to go to; client (accesses checked)
+    printk("env domain: %d\nenv domain reg fill: %b", e->domain, e->domain_reg);
     return e;
 }
 void env_free(env_t *e) {
@@ -62,7 +62,7 @@ void env_free(env_t *e) {
 // GF: seems to have appropriate domain switching here...why our domain reg, then ~0UL? accounting for idea that we're not handling domains yet?
 void env_switch_to(env_t *e) {
     cp15_domain_ctrl_wr(e->domain_reg);
-    cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
+    // cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
 
     cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt);
 

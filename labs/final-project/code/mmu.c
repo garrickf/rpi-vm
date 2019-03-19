@@ -253,7 +253,7 @@ fld_t mk_coarse_page_table() {
     coarse_pt_desc_t *entry = (coarse_pt_desc_t *)&f; // Cast + indirection to do some work
     entry->tag = 1;
     entry->base = (unsigned)pt >> 10; // Take upper 22 bits (IMPORTANT)
-    // entry->domain = 1;
+    entry->domain = 15;
     // TODO: set domain
     printk("coarse_pt_desc_t->base is set to %x\n", entry->base); // Test the address, where is it?
     // assert(f.tag == COARSE_PAGE_TABLE_TAG);

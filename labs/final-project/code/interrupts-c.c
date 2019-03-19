@@ -33,8 +33,13 @@ void data_abort_vector(unsigned pc) {
     if (WIF_READ(faultval)) printk("This access was a read access.\n");
     else printk("This was a write access.\n");
 
-    printk("Domain\t %d\n", WFAULT_DOMAIN(faultval));
-    printk("Status\t %b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(WFAULT_STATUS(faultval)));
+    if (fault_status_has_valid_domain(faultval)) {
+        printk("Domain\t %d\n", WFAULT_DOMAIN(faultval));
+    } else {
+        printk("Domain\t %d <invalid!>\n", WFAULT_DOMAIN(faultval));
+    }
+    
+    printk("Status\t 0b%5b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(faultval));
     printk("Address\t 0x%x\n", get_fault_address_reg());
 
     printk("ERROR: unhandled exception <data abort> at PC=%x\n", pc); // Should trudge on
@@ -90,17 +95,54 @@ void interrupts_init(void) {
 // (p. B4-43)
 int WIF_WRITE(unsigned faultval) { return faultval & (0b1 << 11); }
 int WIF_READ(unsigned faultval) { return !WIF_WRITE(faultval); }
-int WFAULT_DOMAIN(unsigned faultval) { return (faultval & (0b1111 << 4) >> 4 ); }
+int WFAULT_DOMAIN(unsigned faultval) { return ((faultval & (0b1111 << 4)) >> 4); }
 int WFAULT_STATUS(unsigned faultval) { 
-    return (faultval & 0b111) // First three bits of the status
-        | (faultval & (0b1 << 10) >> 6); // The fourth bit
+    return (faultval & 0b1111) // First four bits of the status
+        | ((faultval & (0b1 << 10)) >> 6); // The fifth bit (go to position 10, then 4)
 }
 
-char *fault_status_to_str(int fault_status) {
-    switch (fault_status) {
+// Helper for turning the fault status into a string error (p. B4-20).
+char *fault_status_to_str(unsigned faultval) {
+    switch (WFAULT_STATUS(faultval)) {
+        /* Fault sources arranged by highest priority and grouped by type. */
         case 0b00001: return "Alignment issue";
+
+        case 0b00000: return "PMSA - TLB miss (MPU)";
+        case 0b00100: return "Instruction cache maintenance operation fault";
+
+        case 0b01100: return "1st level external abort on translation";
+        case 0b01110: return "2nd level external abort on translation";
+
         case 0b00101: return "Section translation | domain invalid | FAR valid";
-        // TODO: fill out the other cases
+        case 0b00111: return "Page translation | domain valid";
+
+        case 0b01001: return "Section domain fault";
+        case 0b01011: return "Page domain fault";
+
+        case 0b01101: return "Section permission fault";
+        case 0b01111: return "Page permission fault";
+
+        case 0b01000: return "Precise external abort";       
+        case 0b10100: return "TLB lock";
+        case 0b11010: return "Coprocessor data abort";
+        case 0b10110: return "Imprecise data abort";
+        case 0b11000: return "Parity error exception";
+        case 0b00010: return "Debug event";
     }
     return "Unknown status";
+}
+
+// Given fault status register, return whether or not we can trust the domain value.
+int fault_status_has_valid_domain(unsigned faultval) {
+    switch (WFAULT_STATUS(faultval)) {
+        case 0b01110: // 2nd level external abort on translation
+        case 0b00111: // Page translation
+        case 0b01001: // Section domain fault
+        case 0b01011: // Page domain fault
+        case 0b01101: // Section permission fault
+        case 0b01111: // Page permission fault
+        case 0b00010: // Debug event
+            return 1;
+    }
+    return 0;
 }
