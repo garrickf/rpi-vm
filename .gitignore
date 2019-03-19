@@ -1,3 +1,4 @@
+# Ignore files with these extensions
 *.o
 *.d
 *.elf
@@ -5,3 +6,4 @@
 *.list
 *.DS_Store
 *.vscode*
+.gdb_history
