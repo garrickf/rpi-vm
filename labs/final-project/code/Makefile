@@ -34,8 +34,8 @@ mktags:
 	@rm -f tags
 	ctags *.[chsS] $(LIBPI_PATH)/*.[chsS]
 
-$(NAME).bin: $(LIBPI_PATH)/memmap $(OBJS) vm-start.o 
-	$(LD) vm-start.o $(OBJS) -T $(LIBPI_PATH)/memmap -o $(NAME).elf  $(LPI)
+$(NAME).bin: memmap $(OBJS) vm-start.o 
+	$(LD) vm-start.o $(OBJS) -T memmap -o $(NAME).elf  $(LPI)
 	$(OD) -D $(NAME).elf > $(NAME).list
 	$(OCP) $(NAME).elf -O binary $(NAME).bin
 
