@@ -145,9 +145,9 @@ prefetch_abort_asm:
   bl    prefetch_abort_vector
 data_abort_asm:
   mov   sp, #INT_STACK_ADDR
-  push {r0, lr}             @ want to push all the caller saved regs and maybe (frame ptr), no need for s0-s4
+  push  {r0, lr}             @ want to push all the caller saved regs and maybe (frame ptr), no need for s0-s4
   bl    data_abort_vector
-  pop {r0, lr}
+  pop   {r0, lr}
   sub   lr, lr, #4
   movs  pc, lr              @ Continue on as if nothing happened: see: failure oblivious coding
 interrupt_asm:

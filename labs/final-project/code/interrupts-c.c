@@ -27,22 +27,18 @@ void prefetch_abort_vector(unsigned pc) {
 	UNHANDLED("prefetch abort", pc);
 }
 void data_abort_vector(unsigned pc) {
-	// UNHANDLED("data abort", pc); // panic will kill it?
+    printDataAbort(pc);
+
     unsigned faultval = get_data_fault_status_reg();
-    
-    if (WIF_READ(faultval)) printk("This access was a read access.\n");
-    else printk("This was a write access.\n");
-
-    if (fault_status_has_valid_domain(faultval)) {
-        printk("Domain\t %d\n", WFAULT_DOMAIN(faultval));
-    } else {
-        printk("Domain\t %d <invalid!>\n", WFAULT_DOMAIN(faultval));
+    // If past the end of heap segment, panic
+    if (fault_status_has_valid_far(faultval)) {
+        // TODO: check accesses beyond the stack and grow the stack if needed
+        unsigned address = get_fault_address_reg();
+        if (address > (unsigned)kmalloc_heap_end()) {
+            printk("Past heap end <0x%x>, fatal error. Quitting...\n", (unsigned)kmalloc_heap_end());
+            clean_reboot();
+        }
     }
-    
-    printk("Status\t 0b%5b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(faultval));
-    printk("Address\t 0x%x\n", get_fault_address_reg());
-
-    printk("ERROR: unhandled exception <data abort> at PC=%x\n", pc); // Should trudge on
 }
 
 static int int_intialized_p = 0;
@@ -93,12 +89,12 @@ void interrupts_init(void) {
 
 // Helpers for extracting data from the data fault status register
 // (p. B4-43)
-int WIF_WRITE(unsigned faultval) { return faultval & (0b1 << 11); }
+int WIF_WRITE(unsigned faultval) { return faultval & 0b1 << 11; }
 int WIF_READ(unsigned faultval) { return !WIF_WRITE(faultval); }
-int WFAULT_DOMAIN(unsigned faultval) { return ((faultval & (0b1111 << 4)) >> 4); }
+int WFAULT_DOMAIN(unsigned faultval) { return ((faultval & 0b1111 << 4) >> 4); }
 int WFAULT_STATUS(unsigned faultval) { 
     return (faultval & 0b1111) // First four bits of the status
-        | ((faultval & (0b1 << 10)) >> 6); // The fifth bit (go to position 10, then 4)
+        | ((faultval & 0b1 << 10) >> 6); // The fifth bit (go to position 10, then 4)
 }
 
 // Helper for turning the fault status into a string error (p. B4-20).
@@ -113,8 +109,8 @@ char *fault_status_to_str(unsigned faultval) {
         case 0b01100: return "1st level external abort on translation";
         case 0b01110: return "2nd level external abort on translation";
 
-        case 0b00101: return "Section translation | domain invalid | FAR valid";
-        case 0b00111: return "Page translation | domain valid";
+        case 0b00101: return "Section translation";
+        case 0b00111: return "Page translation";
 
         case 0b01001: return "Section domain fault";
         case 0b01011: return "Page domain fault";
@@ -145,4 +141,57 @@ int fault_status_has_valid_domain(unsigned faultval) {
             return 1;
     }
     return 0;
+}
+
+// Given fault status register, return whether or not we can trust the FAR (faulting address register).
+int fault_status_has_valid_far(unsigned faultval) {
+    switch (WFAULT_STATUS(faultval)) {
+        case 0b10100: // TLB lock
+        case 0b11010: // Coprocessor data abort
+        case 0b10110: // Imprecise data abort
+        case 0b11000: // Parity error exception
+        case 0b00010: // Debug event
+            return 0;
+    }
+    return 1;
+}
+
+// Print a binary value in nDigits digits with leading zeroes if needed
+void printBinary(unsigned val, unsigned nDigits) {
+    for (int i = nDigits - 1; i >= 0; i--) {
+        printk("%b", (val & 0b1 << i) >> i);
+    }
+}
+
+// Helper for dumping information about a data abort
+void printDataAbort(unsigned pc) {
+    unsigned faultval = get_data_fault_status_reg();
+    
+    printk("------ Data abort! ------\n", pc);
+    printk("pc:\t 0x%x\n", pc);
+
+    if (WIF_READ(faultval)) printk("Type:\t Read access\n");
+    else printk("Type:\t Write access\n");
+
+    /* Faulting address */
+    if (fault_status_has_valid_far(faultval)) {
+        printk("Address: 0x%x\n", get_fault_address_reg());
+    } else {
+        printk("Address: 0x%x (invalid!)\n", get_fault_address_reg());
+    }
+
+    /* Domain */
+    if (fault_status_has_valid_domain(faultval)) {
+        printk("Domain:\t %d\n", WFAULT_DOMAIN(faultval));
+    } else {
+        printk("Domain:\t %d (invalid!)\n", WFAULT_DOMAIN(faultval));
+    }
+    
+    /* Status */
+    printk("Status:\t 0b");
+    printBinary(WFAULT_STATUS(faultval), 5);
+    printk(" [%s]\n", fault_status_to_str(faultval));
+    // printk("Status:\t 0b%5b [%s]\n", WFAULT_STATUS(faultval), fault_status_to_str(faultval));
+
+    printk("------- End debug -------\n", pc);
 }

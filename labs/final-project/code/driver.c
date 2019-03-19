@@ -45,9 +45,10 @@ env_t *env_alloc(void) {
 
     // default: can override.
     e->domain_reg = 0b01 << e->domain*2; // Determine the register to go to; client (accesses checked)
-    printk("env domain: %d\nenv domain reg fill: %b", e->domain, e->domain_reg);
+    printk("env domain (1-16): %d\nenv domain reg fill: %b", e->domain, e->domain_reg);
     return e;
 }
+
 void env_free(env_t *e) {
     unsigned n = e - &envs[0];
     demand(n < MAX_ENV, freeing unallocated pointer!);
@@ -64,7 +65,7 @@ void env_switch_to(env_t *e) {
     cp15_domain_ctrl_wr(e->domain_reg);
     // cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
 
-    cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt);
+    cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt); // Ch. B2
 
     unsigned pid,asid;
     mmu_get_curpid(&pid, &asid);
@@ -434,6 +435,10 @@ void vm_tests() {
 
     // Should fault when uncommented
     char c = *((char *)part4_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
+
+    printk("Address of something on the stack... <0x%x>\n", &c); // Where is the stack?
+    c = *((char *)&c);
     printk("Accessing data... <%d>\n", c);
 
     printk("> Mapping a small page with VM enabled.\n");

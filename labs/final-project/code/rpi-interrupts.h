@@ -94,5 +94,8 @@ int WFAULT_DOMAIN(unsigned faultval);
 int WFAULT_STATUS(unsigned faultval);
 char *fault_status_to_str(unsigned faultval);
 int fault_status_has_valid_domain(unsigned faultval);
+int fault_status_has_valid_far(unsigned faultval);
+
+void printDataAbort(unsigned pc);
 
 #endif 
