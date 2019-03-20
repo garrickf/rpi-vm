@@ -1,9 +1,5 @@
 #ifndef __VM_H__
 #define __VM_H__
-/****************************************************************************************
- * page table operations: we only handle mapping 1MB sections.
- */
-
 
 /*
     -----------------------------------------------------------------
@@ -53,12 +49,34 @@
     TEX   C  B 
     0b000 0  0 strongly ordered.   
     0b001 0  0 non-cacheable
-
-
 */
 
-// on pi: organized from 0 to high.
-typedef struct first_level_descriptor {
+// See pg. B4-9 on access permissions; these values are encoded into page table
+// entries to grant access to memory conditionally (user/privileged mode).
+#define AP_NO_ACCESS        0b00
+#define AP_NO_USER          0b01
+#define AP_NO_USER_WRITE    0b10
+#define AP_FULL_ACCESS      0b11
+
+// See pg. B4-10 on domains; these values are written into 16 2-bit slots
+// on the domain access control register to enable/diable access quickly to
+// collections of memory regions.
+#define DOMAIN_NO_ACCESS    0b00
+#define DOMAIN_CLIENT       0b01
+#define DOMAIN_RESERVED     0b10
+#define DOMAIN_MANAGER      0b11
+
+// See TEX on B4-12; encodes the memory region type. We start with strongly ordered,
+// always sharable
+#define TEX_DEFAULT         0b000
+#define DOMAIN_DEFAULT      0
+
+#define FLD_FAULT_TAG       0b00
+#define FLD_COARSE_PT_TAG   0b01
+#define FLD_SECTION_TAG     0b10
+
+// Note: on pi, bits organized from 0 to high.
+typedef struct section_descriptor {
     unsigned
         tag:2,      // 0-1:2    should be 0b10
         B:1,        // 2:1      set to 0
@@ -78,7 +96,7 @@ typedef struct first_level_descriptor {
         super:1,    // 18:1     selects between section (0) and supersection (1)
         _sbz1:1,    // 19:1     sbz
         sec_base_addr:12; // 20-31.  must be aligned.
-} fld_t;
+} sec_desc_t;
 
 /*
  * struct: first level descriptor for coarse page table
@@ -95,6 +113,28 @@ typedef struct coarse_page_table_descriptor {
         IMP:    1,
         base:   22; // Base address of coarse page table
 } coarse_pt_desc_t;
+
+/*
+ * struct: generic first level descriptor
+ * ---
+ * First-level table entries can be either coarse page tables or section, see p. B4-27.
+ * Both flavors map 1MB sections and have similar structures that are exploited here for
+ * common fields. Since the generic type is sized the same as its child types, you can
+ * cast a (fld_t *) to the appropriate type in order to operate on it.
+ */
+typedef struct first_level_descriptor {
+    unsigned
+        tag:    2,
+        _data0: 3,
+        domain: 4,
+        IMP:    1,
+        _data1: 22;
+} fld_t;
+
+#define SLD_FAULT_TAG       0b00
+#define SLD_LG_PAGE_TAG     0b01
+#define SLD_LG_PAGE_BIT_1   0b0
+#define SLD_SM_PAGE_BIT_1   0b1
 
 /*
  * struct: second level descriptor for large page
@@ -143,7 +183,7 @@ typedef struct second_level_descriptor {
     unsigned
         tag0:   1,  // The first bit is 1 in large pages and XN in small pages
         tag1:   1,  // The second bit is 0 in large pages and 1 in small pages (use this to distinguish)
-        data:   30;
+        _data:   30;
 } sld_t;
 
 // helpers to enable caching / write buffer on a section by section basis. note:
@@ -159,7 +199,7 @@ typedef struct second_level_descriptor {
 fld_t *mmu_pt_alloc(unsigned n_entries);
 
 // map a 1mb section starting at va to pa
-fld_t *mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa);
+fld_t *mmu_map_section(fld_t *pt, uint32_t va, uint32_t pa, int domain, int flags);
 
 // lookup section <va> in page table <pt>
 fld_t *mmu_lookup(fld_t *pt, uint32_t va);
@@ -188,14 +228,35 @@ void mmu_reset(void);
 void mmu_all_cache_on(void);
 void mmu_all_cache_off(void);
 
-// Making coarse page tables
-fld_t mk_coarse_page_table();
+// Making entries in the page table
+static sec_desc_t mk_section();
+static fld_t mk_coarse_page_table();
 
-// Mapping small and large pages
-sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa);
-sld_t *mmu_map_lg_page(fld_t *pt, uint32_t va, uint32_t pa);
+// Modifying page table
+sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa, int domain, int flags);
+sld_t *mmu_map_lg_page(fld_t *pt, uint32_t va, uint32_t pa, int domain, int flags);
 
-unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase );
+// Extracting flags
+#define F_NO_ACCESS         0b100
+#define F_NO_USR_ACCESS     0b101
+#define F_NO_USR_WR_ACCESS  0b110
+#define F_FULL_ACCESS       0b111
+#define F_CACHEABLE         (0b1 << 3)
+#define F_BUFFERABLE        (0b1 << 4)
+#define F_SET_APX           (0b1 << 5)
+#define F_NOT_GLOBAL        (0b1 << 6)
+#define F_SHARED            (0b1 << 7)
+#define F_EXEC_NEVER        (0b1 << 8)
+
+unsigned FGET_AP(int flags);
+unsigned FGET_C(int flags);
+unsigned FGET_B(int flags);
+unsigned FGET_APX(int flags);
+unsigned FGET_NG(int flags);
+unsigned FGET_S(int flags);
+unsigned FGET_XN(int flags);
+
+// unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase );
 
 #if 0
 // same as disable/enable except client gives the control reg to use --- 

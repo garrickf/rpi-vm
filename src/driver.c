@@ -177,14 +177,14 @@ void int_part1(void) {
     env_t *e = env_alloc();
 
     // map the sections you need. (GF)
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain; // 0x0 is where our code is
-    mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR)->domain = e->domain; // SWI_STACK_ADDR is where the SWI stack is
-    mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR)->domain = e->domain;
-    mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);; // 0x0 is where our code is
+    mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR, e->domain, 0);; // SWI_STACK_ADDR is where the SWI stack is
+    mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR, e->domain, 0);;
+    mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR, e->domain, 0);;
 
     // gpio
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);;
 
     env_switch_to(e);
     assert(cpsr_read_c() == SYS_MODE);
@@ -223,29 +223,29 @@ void int_part2(void) {
     env_t *e = env_alloc();
 
     // map the sections you need. (GF)
-    fld_t * p = mmu_map_section(e->pt, 0x0, 0x0);
+    sec_desc_t *p = (sec_desc_t *)mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
     p->domain = e->domain;
     fld_cache_on(p);
     fld_writeback_on(p);
     
-    p = mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR);
+    p = (sec_desc_t *)mmu_map_section(e->pt, SWI_STACK_ADDR, SWI_STACK_ADDR, e->domain, 0);
     p->domain = e->domain;
     fld_cache_on(p);
     fld_writeback_on(p);
 
-    p = mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR);
+    p = (sec_desc_t *)mmu_map_section(e->pt, SYS_STACK_ADDR, SYS_STACK_ADDR, e->domain, 0);
     p->domain = e->domain;
     fld_cache_on(p);
     fld_writeback_on(p);
     
-    p = mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR);
+    p = (sec_desc_t *)mmu_map_section(e->pt, INT_STACK_ADDR, INT_STACK_ADDR, e->domain, 0);
     p->domain = e->domain;
     fld_cache_on(p);
     fld_writeback_on(p);
 
     // gpio
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
 
     env_switch_to(e);
     assert(cpsr_read_c() == SYS_MODE);
@@ -300,9 +300,9 @@ void vm_tests() {
 
 // Define a section to decide which test to run.
 #define VM_PART1 0
-#define VM_PART2 1
+#define VM_PART2 0
 #define VM_PART3 0
-#define VM_PART4 0
+#define VM_PART4 1
 #define VM_PART5 0
 
 #if VM_PART1 == 1
@@ -312,7 +312,7 @@ void vm_tests() {
     *((char *)0x400) = 42;
 
     // Just map our section
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
@@ -332,16 +332,16 @@ void vm_tests() {
     *((char *)(part2_base + 0x400)) = 137;
 
     // Just map our section
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
     // Need to map GPIO for communication
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
     // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
     // The stack grows downwards, so we allocate the section below it.
     mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
-        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+        INT_STACK_ADDR - ADDRESSES_PER_MB, e->domain, 0);
     // kmalloc() allocates the page table here; should also be acessible in VM!
-    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
@@ -356,7 +356,7 @@ void vm_tests() {
     PUT32(part2_base + 0x400, 12);
 
     printk("> Mapping a section with VM enabled.\n");
-    fld_t *fld = mmu_map_section(e->pt, part2_base, part2_base);
+    fld_t *fld = mmu_map_section(e->pt, part2_base, part2_base, e->domain, 0);
     fld->domain = e->domain;
     // fld->AP = 0b00; // Generate section permission fault
     c = *((char *)part2_base + 0x400);
@@ -377,17 +377,17 @@ void vm_tests() {
     *((char *)(part3_base + 0x400)) = 125;
 
     // Just map our section
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
     // Need to map GPIO for communication
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
     // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
     // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
     // The stack grows downwards, so we allocate the section below it.
     mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
-        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+        INT_STACK_ADDR - ADDRESSES_PER_MB, e->domain, 0);
     // kmalloc() allocates the page table here; should also be acessible in VM!
-    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
@@ -398,7 +398,7 @@ void vm_tests() {
     printk("Accessing data... <%d>\n", c);
 
     printk("> Mapping a small page with VM enabled.\n");
-    mmu_map_sm_page(e->pt, part3_base, part3_base); // TODO: Add domain
+    mmu_map_sm_page(e->pt, part3_base, part3_base, e->domain, 0);
 
     c = *((char *)part3_base + 0x400);
     // c = *((char *)part3_base + 0x1000 - 4); // This is right on the boundary of the small page
@@ -421,20 +421,20 @@ void vm_tests() {
     *((char *)part4_base + 0x10000 - 4) = 137;
 
     // Just map our section
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
     // Need to map GPIO for communication
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
     // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
     // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
     // The stack grows downwards, so we allocate the section below it.
     mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
-        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+        INT_STACK_ADDR - ADDRESSES_PER_MB, e->domain, 0);
     // kmalloc() allocates the page table here; should also be acessible in VM!
-    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR, e->domain, 0);
 
     printk("> Mapping a large page before turning on VM.\n");
-    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
+    mmu_map_lg_page(e->pt, part4_base, part4_base, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
@@ -450,7 +450,7 @@ void vm_tests() {
 
     // Does mapping under VM mean that TLB is invalidated?
     // printk("> Mapping a large page with VM enabled.\n");
-    // mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
+    // mmu_map_lg_page(e->pt, part4_base, part4_base, e->domain, 0);
 
     // cp15_domain_ctrl_wr(~0UL); // Seems okay to write to CP15 while VM is on!
 
@@ -475,17 +475,17 @@ void vm_tests() {
     unsigned part5_base = 0x100000;
     *((char *)(part5_base + 0x400)) = 21;
     
-    mmu_map_section(e->pt, 0x0, 0x0)->domain = e->domain;
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
     // Need to map GPIO for communication
-    mmu_map_section(e->pt, 0x20000000, 0x20000000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
     // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
-    mmu_map_section(e->pt, 0x20200000, 0x20200000)->domain = e->domain;
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
     // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
     // The stack grows downwards, so we allocate the section below it.
     mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
-        INT_STACK_ADDR - ADDRESSES_PER_MB)->domain = e->domain;
+        INT_STACK_ADDR - ADDRESSES_PER_MB, e->domain, 0);
     // kmalloc() allocates the page table here; should also be acessible in VM!
-    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
+    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
@@ -496,7 +496,7 @@ void vm_tests() {
     printk("Accessing data... <%d>\n", c);
 
     printk("> Mapping a small page with VM enabled.\n");
-    mmu_map_lg_page(e->pt, part5_base, part5_base); // TODO: Add domain
+    mmu_map_lg_page(e->pt, part5_base, part5_base, e->domain, 0);
 
     c = *((char *)part5_base + 0x400);
     printk("Accessing data... <%d>\n", c);
