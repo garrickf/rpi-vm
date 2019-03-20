@@ -67,7 +67,7 @@ void env_free(env_t *e) {
 // GF: seems to have appropriate domain switching here...why our domain reg, then ~0UL? accounting for idea that we're not handling domains yet?
 void env_switch_to(env_t *e) {
     cp15_domain_ctrl_wr(e->domain_reg);
-    cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
+    // cp15_domain_ctrl_wr(~0UL); // Should trigger a secion domain fault: check writing the reg with mmu on in manual, as well as surfacing correct error code
 
     cp15_set_procid_ttbr0(e->pid << 8 | e->asid, e->pt); // Ch. B2
 
@@ -300,9 +300,9 @@ void vm_tests() {
 
 // Define a section to decide which test to run.
 #define VM_PART1 0
-#define VM_PART2 0
+#define VM_PART2 1
 #define VM_PART3 0
-#define VM_PART4 1
+#define VM_PART4 0
 #define VM_PART5 0
 
 #if VM_PART1 == 1
@@ -356,7 +356,9 @@ void vm_tests() {
     PUT32(part2_base + 0x400, 12);
 
     printk("> Mapping a section with VM enabled.\n");
-    mmu_map_section(e->pt, part2_base, part2_base)->domain = e->domain;
+    fld_t *fld = mmu_map_section(e->pt, part2_base, part2_base);
+    fld->domain = e->domain;
+    // fld->AP = 0b00; // Generate section permission fault
     c = *((char *)part2_base + 0x400);
     printk("Accessing data... <%d>\n", c);
     assert(*((char *)(part2_base + 0x400)) == 137);
@@ -431,6 +433,9 @@ void vm_tests() {
     // kmalloc() allocates the page table here; should also be acessible in VM!
     mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR)->domain = e->domain;
 
+    printk("> Mapping a large page before turning on VM.\n");
+    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
+
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
     printk("> MMU turned on successfully.\n");
@@ -443,10 +448,9 @@ void vm_tests() {
     c = *((char *)&c);
     printk("Accessing data... <%d>\n", c);
 
-    
-
-    printk("> Mapping a large page with VM enabled.\n");
-    mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
+    // Does mapping under VM mean that TLB is invalidated?
+    // printk("> Mapping a large page with VM enabled.\n");
+    // mmu_map_lg_page(e->pt, part4_base, part4_base); // TODO: Add domain, protection bits
 
     // cp15_domain_ctrl_wr(~0UL); // Seems okay to write to CP15 while VM is on!
 
