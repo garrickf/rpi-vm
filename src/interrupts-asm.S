@@ -146,10 +146,10 @@ prefetch_abort_asm:
   bl    prefetch_abort_vector
 data_abort_asm:
   mov   sp, #INT_STACK_ADDR
-  push  {r0, lr}             @ want to push all the caller saved regs and maybe (frame ptr), no need for s0-s4
+  push  {r0-r12, lr}        @ want to push all the caller saved regs and maybe (frame ptr), no need for s0-s4
   bl    data_abort_vector
-  pop   {r0, lr}
-  sub   lr, lr, #4
+  pop   {r0-r12, lr}
+  sub   lr, lr, #4          @ [ A2.6.6 | A2-21 ] Data Aborts: can go back by #8 (to re-execute after fixing reason for abort) or by #4 (if the aborted instruction does not need to be re-executed)
   movs  pc, lr              @ Continue on as if nothing happened: see: failure oblivious coding
 interrupt_asm:
   sub   lr, lr, #4

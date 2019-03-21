@@ -308,8 +308,8 @@ void vm_tests() {
 #define VM_PART3 0
 #define VM_PART4 0
 // These next tests require you to set #define RUN_ADVANCED 1 in memmap-constants.h
-#define VM_PART5 0
-#define VM_PART6 1
+#define VM_PART5 1
+#define VM_PART6 0
 
 #if VM_PART1 == 1
     printk("\n*** Test 1 ***\n\n");
@@ -558,8 +558,8 @@ void vm_tests() {
     printk("> MMU turned on successfully.\n");
 
     // Should fault when uncommented
-    // char c = *((char *)part6_base + 0x400);
-    // printk("Accessing data... <%d>\n", c);
+    char c = *((char *)part6_base + 0x400);
+    printk("Accessing data... <%d>\n", c);
 
     // Page miss
     // char c = *((char *)SYS_STACK_ADDR - 0x20000);
@@ -574,9 +574,9 @@ void vm_tests() {
     // printk("Accessing data... <%d>\n", c);
 
     // AP fault
-    mmu_map_sm_page(e->pt, part6_base, part6_base, e->domain, F_NO_ACCESS);
-    char c = *((char *)part6_base + 0x400);
-    printk("Accessing data... <%d>\n", c);
+    // mmu_map_sm_page(e->pt, part6_base, part6_base, e->domain, F_NO_ACCESS);
+    // char c = *((char *)part6_base + 0x400);
+    // printk("Accessing data... <%d>\n", c);
     
     mmu_disable();
     assert(!mmu_is_on());
