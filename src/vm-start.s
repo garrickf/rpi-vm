@@ -1,3 +1,5 @@
+#include "memmap-constants.h"
+
 // To keep this in the first portion of the binary.
 .section ".text.boot"
 
@@ -7,7 +9,7 @@ _start:
     msr cpsr_c, r0
 
     // dwelch starts here: mov sp, #0x8000
-    mov sp, #0x8000
+    mov sp, #INITIAL_STACK_PTR
     mov fp, #0  // i don't think necessary.
     @ bl notmain
     bl _cstart

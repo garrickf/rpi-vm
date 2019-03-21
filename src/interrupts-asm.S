@@ -45,10 +45,10 @@ system_disable_interrupts:
 @ put your code below.
 
 @ Ref. from lab on threads (lab9)
-.globl cpsr_read
-cpsr_read:
-	mrs r0, cpsr
-	bx lr
+@ .globl cpsr_read
+@ cpsr_read:
+@ 	mrs r0, cpsr
+@ 	bx lr
 
 .globl swi_asm1
 swi_asm1:

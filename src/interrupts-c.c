@@ -8,6 +8,9 @@
 #include "mmu.h"
 #include "memmap-constants.h"
 
+#define DEBUG_HANDLE_DATA_ABORTS 1
+#define DEBUG_PRINT_DATA_ABORTS 1
+
 #define UNHANDLED(msg,r) \
 	panic("ERROR: unhandled exception <%s> at PC=%x\n", msg,r)
 
@@ -37,20 +40,24 @@ void prefetch_abort_vector(unsigned pc) {
 
 void data_abort_vector(unsigned pc) {
     // cpsr_print_mode(cpsr_read()); // Will be in abort mode
+#if DEBUG_PRINT_DATA_ABORTS == 1
     printDataAbort(pc);
+#endif
 
-#define HANDLE_FAULTS 0
-#if HANDLE_FAULTS == 1
+#if DEBUG_HANDLE_DATA_ABORTS == 1
     unsigned faultval = get_data_fault_status_reg();
     if (fault_status_has_valid_far(faultval)) {
         unsigned address = get_fault_address_reg();
+        if (address == 0x0) { // null ptr exception
+            printk("Illegal access of 0x0. Aborting...");
+            clean_reboot();
+        }
+
         if (address < SYS_STACK_ADDR_FINE && address > (unsigned)kmalloc_heap_end()) {
             // Within system stack bounds and above heap, initiate a page miss
             // Could make more fine grained
             handle_page_miss(address);
-        }
-
-        if (address < (unsigned)kmalloc_heap_start() || address > (unsigned)kmalloc_heap_end()) {
+        } else if (address < (unsigned)kmalloc_heap_start() || address > (unsigned)kmalloc_heap_end()) {
             printk("Outside of heap <range 0x%x to 0x%x>, fatal error. Quitting...\n", 
                 (unsigned)kmalloc_heap_start(), 
                 (unsigned)kmalloc_heap_end());
@@ -58,13 +65,6 @@ void data_abort_vector(unsigned pc) {
         }
     }
 #endif
-}
-
-// Allocate a small page for the address that was faulted on.
-void handle_page_miss(unsigned address) {
-    // Do a one-to-one mapping
-    // mmu_map_sm_page(pt, address, address);
-    printk("Allocating a new page for the stack...");
 }
 
 static int int_intialized_p = 0;

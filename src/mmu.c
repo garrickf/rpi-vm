@@ -272,13 +272,15 @@ static lg_page_desc_t mk_lg_page() {
 
 /* Virtual address to key/index functions */
 
-// From virtual address, get 12-bit large page index, bits [31:20]. See pg. B4-33
+// From virtual address, get 12-bit first-level table index, bits [31:20]. See pg. B4-33
 static uint32_t get_first_level_table_idx(uint32_t va) {
+    // printk("translation: %x, %x\n", va, (va >> 20));
     return va >> 20;
 }
 
 // From virtual address, get 8-bit second-level table index, bits [19:12]. See pg. B4-33
 static uint32_t get_second_level_table_idx(uint32_t va) {
+    // printk("2nd level translation: %x, %x\n", va, (va >> 12) & 0xFF);
     return (va >> 12) & 0xFF; // 0xFF = 8 0b1's
 }
 
@@ -386,7 +388,7 @@ sld_t *mmu_map_sm_page(fld_t *pt, uint32_t va, uint32_t pa, int domain, int flag
 }
 
 // Large pages need to be replicated 16 times, and there are 256 entries in a coarse page table.
-// We shouldn't allocate a large page at cpt[256 - 16 = 240] onwards, or we'll bleed past the end.
+// We shouldn't allocate a large page at greater than cpt[256 - 16 = 240], or we'll bleed past the end.
 #define MAX_LARGE_PAGE_IDX 240
 
 /*
@@ -409,7 +411,7 @@ sld_t *mmu_map_lg_page(fld_t *pt, uint32_t va, uint32_t pa, int domain, int flag
 
     // Avoid allocating large pages towards the end of a coarse page table. A compromise;
     // could track large pages that bleed across multiple coarse page tables if we wanted.
-    assert(get_second_level_table_idx(va) < MAX_LARGE_PAGE_IDX);
+    assert(get_second_level_table_idx(va) <= MAX_LARGE_PAGE_IDX);
 
     // Grab the first-level descriptor/page directory entry (PDE)
     fld_t *pde = mmu_first_level_lookup(pt, va);
@@ -470,6 +472,7 @@ unsigned FGET_NG(int flags) { return (flags & F_NOT_GLOBAL) >> 6; }
 unsigned FGET_S(int flags) { return (flags & F_SHARED) >> 7; }
 unsigned FGET_XN(int flags) { return (flags & F_EXEC_NEVER) >> 8; }
 
+// dwelch's code, for reference. uses more bit manipulation than our struct approach
 // #define MMUTABLEBASE 0x304000
 // unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase )
 // {

@@ -145,7 +145,7 @@ typedef struct first_level_descriptor {
  * four bits of the page index overlap, each page table entry for a large page must be repeated
  * 16 times consecutively; the page index, no matter what those upper four bits are, is referring 
  * to the same page, despite those same four bits being part of the "key." In a sense, we are
- * using the same hardware table walk and altering our table structure to match.
+ * using the same hardware table walk and just altering our table structure to match.
  * 
  * If large pages and small pages begin to mix in a coarse table, having large pages occupy multiple
  * spots reserved for small pages will also help with collisions.
@@ -165,6 +165,14 @@ typedef struct large_page_descriptor {
         base:   16; // 16 bits in base leave 16 bits to address ~64KB of memory
 } lg_page_desc_t;
 
+/*
+ * struct: second level descriptor for small page
+ * ---
+ * Second-level table entry for a small page (4KB). See p. B4-31 for the format and p. B4-34
+ * for the complete translation sequence for a small page in a coarse page table. Note that the XN
+ * bit is crammed into what would be bit 0 of the entry/tag, so logic checking if something is
+ * a small or large page ought to check bit 1 of the entry/tag.
+ */
 typedef struct small_page_descriptor {
     unsigned
         XN:     1,
@@ -179,6 +187,13 @@ typedef struct small_page_descriptor {
         base:   20; // 20 bits in base leave 12 bits to address ~4KB of memory
 } sm_page_desc_t;
 
+/*
+ * struct: generic second level descriptor
+ * ---
+ * Second-level table entries can be either small or large pages, see p. B4-31.
+ * Since the generic type is sized the same as its child types, you can
+ * cast a (sld_t *) to the appropriate type in order to operate on it.
+ */
 typedef struct second_level_descriptor {
     unsigned
         tag0:   1,  // The first bit is 1 in large pages and XN in small pages
@@ -256,7 +271,8 @@ unsigned FGET_NG(int flags);
 unsigned FGET_S(int flags);
 unsigned FGET_XN(int flags);
 
-// unsigned int mmu_small ( unsigned int vadd, unsigned int padd, unsigned int flags, unsigned int mmubase );
+// Handling page misses (see driver.c for the code, we need access to the current page table)
+void handle_page_miss(unsigned address);
 
 #if 0
 // same as disable/enable except client gives the control reg to use --- 

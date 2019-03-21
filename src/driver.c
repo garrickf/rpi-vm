@@ -10,6 +10,8 @@
 #include "interrupts-asm.h"
 #include "rpi-interrupts.h"
 #include "memmap-constants.h"
+#include "cpsr-util.h"          // CPSR utilities
+#include "cpsr-util-asm.h"
 
 /****************************************************************************************
  * helper code to help set up address space environment.
@@ -32,6 +34,7 @@ static uint32_t pid_cnt;
 
 #define MAX_ENV 8
 static env_t envs[MAX_ENV];
+static env_t *curr_env;
 
 void env_init(void) {
     dom_v = bvec_mk(1,16);
@@ -79,6 +82,7 @@ void env_switch_to(env_t *e) {
     assert(pid == e->pid);
     assert(asid == e->asid);
     // mmu_asid_print();
+    curr_env = e;
 
     mmu_enable();
 }
@@ -302,8 +306,10 @@ void vm_tests() {
 #define VM_PART1 0
 #define VM_PART2 0
 #define VM_PART3 0
-#define VM_PART4 1
+#define VM_PART4 0
+// These next tests require you to set #define RUN_ADVANCED 1 in memmap-constants.h
 #define VM_PART5 0
+#define VM_PART6 1
 
 #if VM_PART1 == 1
     printk("\n*** Test 1 ***\n\n");
@@ -472,42 +478,104 @@ void vm_tests() {
     printk("\n*** Test 5 ***\n\n");
     printk("> Dereferencing nullptr should yield an error.\n");
 
-    unsigned part5_base = 0x100000;
-    *((char *)(part5_base + 0x400)) = 21;
+    mmu_map_sm_page(e->pt, 0x0, 0x0, e->domain, F_NO_USR_ACCESS); // Map interrupt table with no user access.
+    for (int i = 0; i < 256; i++) { // Map kernel code
+        mmu_map_sm_page(e->pt, KERNEL_BASE + i * ADDRESSES_PER_4KB, 
+            KERNEL_BASE + i * ADDRESSES_PER_4KB, e->domain, 0);
+    }
+
+    swi_setup_stack(SWI_STACK_ADDR_FINE);
+    mmu_map_lg_page(e->pt, SWI_STACK_ADDR_FINE - ADDRESSES_PER_64KB, 
+        SWI_STACK_ADDR_FINE - ADDRESSES_PER_64KB, e->domain, 0);
     
-    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
+    mmu_map_lg_page(e->pt, INT_STACK_ADDR_FINE - ADDRESSES_PER_64KB, 
+        INT_STACK_ADDR_FINE - ADDRESSES_PER_64KB, e->domain, 0);
+
+    // 1 MB of heap
+    for (int i = 0; i < 16; i++) {
+        mmu_map_lg_page(e->pt, SYS_HEAP_START + i * ADDRESSES_PER_64KB, 
+            SYS_HEAP_START + i * ADDRESSES_PER_64KB, e->domain, 0);
+    }
+
+    mmu_map_section(e->pt, SYS_STACK_ADDR_FINE - ADDRESSES_PER_MB, 
+            SYS_STACK_ADDR_FINE - ADDRESSES_PER_MB, e->domain, 0);
+    
     // Need to map GPIO for communication
     mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
     // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
     mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
-    // Need to map interrupt stack to jump to handler code. If you comment out, hangs at the interrupt.
-    // The stack grows downwards, so we allocate the section below it.
-    mmu_map_section(e->pt, INT_STACK_ADDR - ADDRESSES_PER_MB, 
-        INT_STACK_ADDR - ADDRESSES_PER_MB, e->domain, 0);
-    // kmalloc() allocates the page table here; should also be acessible in VM!
-    mmu_map_section(e->pt, MAX_STACK_ADDR, MAX_STACK_ADDR, e->domain, 0);
 
     env_switch_to(e); // calls mmu_enable();
     assert(mmu_is_on());
     printk("> MMU turned on successfully.\n");
 
-    // Should fault when uncommented, should go to interrupt table at PA 0x0
-    char c = *((char *)part5_base + 0x400);
-    printk("Accessing data... <%d>\n", c);
+    // Swap to client
+    cpsr_set_mode(USER_MODE);
+    cpsr_print_mode(cpsr_read_c()); // We ought to be in user mode
+    printk("> Dereferencing nullptr\n");
+    char nptr = *((char *)0x0);
+    printk("Accessing data... <%d>\n", nptr);
+    
+    mmu_disable();
+    assert(!mmu_is_on());
 
-    printk("> Mapping a small page with VM enabled.\n");
-    mmu_map_lg_page(e->pt, part5_base, part5_base, e->domain, 0);
+    printk("> End of test!\n");
+#endif
 
-    c = *((char *)part5_base + 0x400);
-    printk("Accessing data... <%d>\n", c);
-    assert(*((char *)(part5_base + 0x400)) == 21);
+// Test 6
+#if VM_PART6 == 1
+    printk("\n*** Test 6 ***\n\n");
+    printk("> Integrated test: small pages, large pages, sections. Faults, grow stack\n");
 
-    // TODO: Swap domain to client
+    unsigned part6_base = USR_SPACE_START;
+    *((char *)(part6_base + 0x400)) = 137;
 
-    cpsr_print_mode(cpsr_read_c()); // We ought to be in sys mode
+    mmu_map_section(e->pt, 0x0, 0x0, e->domain, 0);
 
-    // What if we dereference nullptr itself? (We may be in system mode)
-    c = *((char *)0x0);
+    swi_setup_stack(SWI_STACK_ADDR_FINE);
+    mmu_map_lg_page(e->pt, SWI_STACK_ADDR_FINE - ADDRESSES_PER_64KB, 
+        SWI_STACK_ADDR_FINE - ADDRESSES_PER_64KB, e->domain, 0);
+    
+    mmu_map_lg_page(e->pt, INT_STACK_ADDR_FINE - ADDRESSES_PER_64KB, 
+        INT_STACK_ADDR_FINE - ADDRESSES_PER_64KB, e->domain, 0);
+
+    // 1 MB of heap
+    for (int i = 0; i < 16; i++) {
+        mmu_map_lg_page(e->pt, SYS_HEAP_START + i * ADDRESSES_PER_64KB, 
+            SYS_HEAP_START + i * ADDRESSES_PER_64KB, e->domain, 0);
+    }
+
+    mmu_map_lg_page(e->pt, SYS_STACK_ADDR_FINE - ADDRESSES_PER_64KB, 
+            SYS_STACK_ADDR_FINE - ADDRESSES_PER_64KB, e->domain, 0);
+    
+    // Need to map GPIO for communication
+    mmu_map_section(e->pt, 0x20000000, 0x20000000, e->domain, 0);
+    // mmu_map_section(e->pt, 0x20100000, 0x20100000)->domain = e->domain; // stderr seems to feed through here
+    mmu_map_section(e->pt, 0x20200000, 0x20200000, e->domain, 0);
+
+    env_switch_to(e); // calls mmu_enable();
+    assert(mmu_is_on());
+    printk("> MMU turned on successfully.\n");
+
+    // Should fault when uncommented
+    // char c = *((char *)part6_base + 0x400);
+    // printk("Accessing data... <%d>\n", c);
+
+    // Page miss
+    // char c = *((char *)SYS_STACK_ADDR - 0x20000);
+    // printk("Accessing data... <%d>\n", c);
+    // // Should not miss again
+    // c = *((char *)SYS_STACK_ADDR - 0x20000);
+    // printk("Accessing data... <%d>\n", c);
+
+    // Domain fault
+    // mmu_map_sm_page(e->pt, part6_base, part6_base, 11, 0);
+    // char c = *((char *)part6_base + 0x400);
+    // printk("Accessing data... <%d>\n", c);
+
+    // AP fault
+    mmu_map_sm_page(e->pt, part6_base, part6_base, e->domain, F_NO_ACCESS);
+    char c = *((char *)part6_base + 0x400);
     printk("Accessing data... <%d>\n", c);
     
     mmu_disable();
@@ -523,6 +591,15 @@ void syscall_tests() {
     return;
 }
 
+void handle_page_miss(unsigned address) {
+    // Do a one-to-one mapping
+    assert(curr_env);
+    printk("Allocating a new page for the stack...\n");
+    mmu_map_lg_page(curr_env->pt, address - ADDRESSES_PER_4KB, 
+        address - ADDRESSES_PER_4KB, curr_env->domain, 0);
+    printk("All done!\n");
+}
+
 // Main entry point for program
 void notmain() {
     // Initialize UART, enable interrupts
@@ -530,7 +607,11 @@ void notmain() {
     interrupts_init();
 
     // start the heap after the max stack address
+#if VM_PART5 == 0 && VM_PART6 == 0
     kmalloc_set_start(MAX_STACK_ADDR);
+#else
+    kmalloc_set_start(SYS_HEAP_START); // Fine alloc (see memmap-constants.h)
+#endif
 
     // implement swi interrupts without vm
     // int_part1();

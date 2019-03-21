@@ -3,7 +3,7 @@
 
 # Define the name of the executable and the object files that need to linked to create it.
 NAME = pi-vm
-OBJS = driver.o vm-asm.o cp15-arm.o mmu.o bvec.o interrupts-c.o interrupts-asm.o
+OBJS = driver.o vm-asm.o cp15-arm.o mmu.o bvec.o interrupts-c.o interrupts-asm.o cpsr-util-asm.o
 
 # We're using a modified libpi: full link here (replace with your own!)
 LIBPI_PATH = /Users/garrick/code/cs140e/final-project/libpi-mine/

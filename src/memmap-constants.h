@@ -26,6 +26,9 @@
  * ---------------------------------------------------
  */
 
+// Fiddle this to change constants (good for interrupt handlers, which jump to those constants)
+#define RUN_ADVANCED 1
+
 #define ADDRESSES_PER_MB    0x100000
 #define ADDRESSES_PER_64KB  0x10000
 #define ADDRESSES_PER_4KB   0x1000
@@ -34,15 +37,6 @@
 #define KERNEL_BASE         0x8000
 #define ARMBASE             0x408000
 
-/* Initial locations to host interrupt handler stacks without sm/lg pages.
- * Each mapped section is currently 1MB (100 000 hex addresses) big, since
- * the VM lets us map in 1MB chunks. Stacks grow downward! */
-#define SYS_STACK_ADDR      0x100000 
-#define SWI_STACK_ADDR      0x200000
-#define INT_STACK_ADDR      0x300000
-#define MAX_ADDR            0x400000
-// The heap is set to start after the kernel's special stacks
-#define MAX_STACK_ADDR      INT_STACK_ADDR
 
 /* With sm/lg pages, can be more fine with how memory is laid out. Expect that
  * syscall and swi stacks won't be bigger than 64KB, and make the system stack exist in
@@ -52,3 +46,24 @@
 #define SYS_STACK_ADDR_FINE 0x400000
 #define USR_SPACE_START     0x400000
 #define SYS_HEAP_START      0x140000
+
+/* Initial locations to host interrupt handler stacks without sm/lg pages.
+ * Each mapped section is currently 1MB (100 000 hex addresses) big, since
+ * the VM lets us map in 1MB chunks. Stacks grow downward! */
+#if RUN_ADVANCED == 0
+#define SYS_STACK_ADDR      0x100000 
+#define SWI_STACK_ADDR      0x200000
+#define INT_STACK_ADDR      0x300000
+#define MAX_ADDR            0x400000
+// The heap is set to start after the kernel's special stacks
+#define MAX_STACK_ADDR      INT_STACK_ADDR
+#define INITIAL_STACK_PTR   0x8000
+#else
+#define SYS_STACK_ADDR      SYS_STACK_ADDR_FINE 
+#define SWI_STACK_ADDR      SWI_STACK_ADDR_FINE
+#define INT_STACK_ADDR      INT_STACK_ADDR_FINE
+#define MAX_ADDR            USR_SPACE_START
+// The heap is set to start after the kernel's special stacks
+#define MAX_STACK_ADDR      SYS_STACK_ADDR_FINE
+#define INITIAL_STACK_PTR   SYS_STACK_ADDR_FINE
+#endif

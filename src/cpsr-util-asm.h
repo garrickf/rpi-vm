@@ -1,5 +1,12 @@
-#ifndef __INTERRUPT_ASM_H__
-#define __INTERRUPT_ASM_H__
+#ifndef __CPSR_UTIL_ASM_H__
+#define __CPSR_UTIL_ASM_H__
+
+/*
+ * Current Program Status Register (CPSR) utilities
+ * ---
+ * Presents an interface for reading and writing to the
+ * CPSR.
+ */
 
 // See pg. A2-14: all modes but user are privileged
 #define USER_MODE       0b10000
